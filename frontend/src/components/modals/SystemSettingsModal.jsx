@@ -1,14 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Wrench, Search, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Wrench, Search, Loader2, CheckCircle, AlertTriangle, Tag, Printer } from 'lucide-react';
 import { Button } from '../ui/button';
 import { inventory as inventoryApi } from '../../services/api';
+import LabelPrintModal from './LabelPrintModal';
 
 export default function SystemSettingsModal({ isOpen, onClose }) {
     const [isFixingDates, setIsFixingDates] = useState(false);
     const [fixDatesResult, setFixDatesResult] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState(null);
+
+    // Label Tool state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [showLabelModal, setShowLabelModal] = useState(false);
+    const [allVehicles, setAllVehicles] = useState([]);
+
+    // Load vehicles on mount
+    useEffect(() => {
+        if (isOpen) {
+            loadVehicles();
+        }
+    }, [isOpen]);
+
+    const loadVehicles = async () => {
+        try {
+            const data = await inventoryApi.getAll();
+            setAllVehicles(data);
+        } catch (error) {
+            console.error('Failed to load vehicles:', error);
+        }
+    };
+
+    // Search vehicles
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+        const query = searchQuery.toLowerCase();
+        const filtered = allVehicles.filter(v =>
+            v.stockNumber?.toLowerCase().includes(query) ||
+            v.vin?.toLowerCase().includes(query) ||
+            `${v.year} ${v.make} ${v.model}`.toLowerCase().includes(query)
+        ).slice(0, 10);
+
+        setSearchResults(filtered);
+        setIsSearching(false);
+    }, [searchQuery, allVehicles]);
 
     if (!isOpen) return null;
 
@@ -107,9 +151,24 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
         }
     };
 
+    const handleSelectVehicle = (vehicle) => {
+        setSelectedVehicle(vehicle);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    const handleOpenLabelModal = () => {
+        if (selectedVehicle) {
+            setShowLabelModal(true);
+        }
+    };
+
     const handleClose = () => {
         setFixDatesResult(null);
         setScanResult(null);
+        setSearchQuery('');
+        setSearchResults([]);
+        setSelectedVehicle(null);
         onClose();
     };
 
@@ -145,6 +204,94 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
 
                         {/* Content */}
                         <div className="p-5 space-y-6 max-h-[70vh] overflow-y-auto">
+                            {/* Label Tool Section */}
+                            <div>
+                                <h3 className="text-base font-semibold text-slate-200 mb-4 pb-2 border-b border-slate-600/50">
+                                    Label Tool
+                                </h3>
+
+                                <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-600/50">
+                                    <div className="flex items-start gap-4">
+                                        <div className="text-2xl">🏷️</div>
+                                        <div className="flex-1">
+                                            <h4 className="text-sm font-semibold text-slate-200 mb-1">
+                                                Generate Vehicle Labels
+                                            </h4>
+                                            <p className="text-xs text-slate-400 mb-3">
+                                                Search for a vehicle by stock number, VIN, or description to generate folder labels or key tags.
+                                            </p>
+
+                                            {/* Search Input */}
+                                            <div className="relative mb-3">
+                                                <input
+                                                    type="text"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    placeholder="Search by stock #, VIN, or vehicle..."
+                                                    className="w-full px-3 py-2 pl-9 rounded-lg text-sm text-slate-200 bg-slate-700/50 border border-slate-600/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                />
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                                                {isSearching && (
+                                                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 animate-spin" />
+                                                )}
+                                            </div>
+
+                                            {/* Search Results */}
+                                            {searchResults.length > 0 && (
+                                                <div className="max-h-40 overflow-y-auto rounded-lg bg-slate-700/50 border border-slate-600/50 mb-3">
+                                                    {searchResults.map((v) => (
+                                                        <button
+                                                            key={v.id}
+                                                            onClick={() => handleSelectVehicle(v)}
+                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-slate-600/50 transition-colors flex items-center justify-between"
+                                                        >
+                                                            <span className="text-slate-200">
+                                                                {v.stockNumber} - {v.year} {v.make} {v.model}
+                                                            </span>
+                                                            <span className="text-xs text-slate-500 font-mono">
+                                                                {v.vin?.slice(-8)}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Selected Vehicle */}
+                                            {selectedVehicle && (
+                                                <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 mb-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-slate-200">
+                                                                {selectedVehicle.stockNumber} - {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                                                            </p>
+                                                            <p className="text-xs text-slate-400 font-mono">
+                                                                VIN: {selectedVehicle.vin}
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setSelectedVehicle(null)}
+                                                            className="p-1 rounded text-slate-400 hover:text-slate-200"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <Button
+                                                variant="secondary"
+                                                className="w-full"
+                                                onClick={handleOpenLabelModal}
+                                                disabled={!selectedVehicle}
+                                            >
+                                                <Tag className="h-4 w-4 mr-2" />
+                                                Generate Label
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Data Management Section */}
                             <div>
                                 <h3 className="text-base font-semibold text-slate-200 mb-4 pb-2 border-b border-slate-600/50">
@@ -166,8 +313,8 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
 
                                             {fixDatesResult && (
                                                 <div className={`p-2 rounded-lg mb-3 text-sm flex items-center gap-2 ${fixDatesResult.success
-                                                        ? 'bg-green-500/10 text-green-400 border border-green-500/30'
-                                                        : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                                                    ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/30'
                                                     }`}>
                                                     {fixDatesResult.success ? (
                                                         <CheckCircle className="h-4 w-4" />
@@ -215,10 +362,10 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
 
                                             {scanResult && (
                                                 <div className={`p-2 rounded-lg mb-3 text-sm ${scanResult.success
-                                                        ? scanResult.duplicates?.length > 0
-                                                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
-                                                            : 'bg-green-500/10 text-green-400 border border-green-500/30'
-                                                        : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                                                    ? scanResult.duplicates?.length > 0
+                                                        ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                                                        : 'bg-green-500/10 text-green-400 border border-green-500/30'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/30'
                                                     }`}>
                                                     <div className="flex items-center gap-2 mb-2">
                                                         {scanResult.success && scanResult.duplicates?.length === 0 ? (
@@ -295,6 +442,14 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
                     </motion.div>
                 </motion.div>
             )}
+
+            {/* Label Print Modal */}
+            <LabelPrintModal
+                vehicle={selectedVehicle}
+                isOpen={showLabelModal}
+                onClose={() => setShowLabelModal(false)}
+            />
         </AnimatePresence>
     );
 }
+

@@ -4,7 +4,7 @@ import { X, Edit2, Save, Trash2, User, FileText, Printer, DollarSign, FolderOpen
 import { Button } from '../ui/button';
 import { Input, Select, FormRow } from '../ui/input';
 import { inventory as inventoryApi, documents as documentsApi } from '../../services/api';
-import LabelPrintModal from './LabelPrintModal';
+import { jsPDF } from 'jspdf';
 
 const STATUS_OPTIONS = [
     { value: 'in-stock', label: 'In Stock', color: 'bg-emerald-500' },
@@ -31,7 +31,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showSoldModal, setShowSoldModal] = useState(false);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
-    const [showLabelModal, setShowLabelModal] = useState(false);
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [vehicleDocuments, setVehicleDocuments] = useState([]);
@@ -285,6 +285,181 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 
     const getCurrentStatusOption = () => {
         return STATUS_OPTIONS.find(opt => opt.value === vehicle.status) || STATUS_OPTIONS[0];
+    };
+
+    // Generate Vehicle Pickup Acknowledgement PDF
+    const generatePickupForm = async () => {
+        if (!vehicle) return;
+
+        setIsGeneratingPDF(true);
+        try {
+            const doc = new jsPDF();
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 15;
+            const contentWidth = pageWidth - margin * 2;
+
+            // ============ HEADER SECTION ============
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Vehicle Pickup Acknowledgement', pageWidth / 2, 20, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(80, 80, 80);
+            doc.text('Brandon Tomes Subaru Fleet Department', pageWidth / 2, 28, { align: 'center' });
+
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.line(margin, 34, pageWidth - margin, 34);
+
+            let yPos = 44;
+
+            // ============ VEHICLE INFORMATION SECTION ============
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Vehicle Information', margin, yPos);
+            yPos += 6;
+
+            const rowHeight = 10;
+            const col1LabelWidth = 30;
+            const col1ValueWidth = 50;
+            const col2LabelWidth = 30;
+            const col2ValueWidth = contentWidth - col1LabelWidth - col1ValueWidth - col2LabelWidth;
+            const col2Start = margin + col1LabelWidth + col1ValueWidth;
+
+            // Helper function to draw a 2-column row
+            const draw2ColRow = (label1, value1, label2, value2, y) => {
+                doc.setDrawColor(150, 150, 150);
+                doc.setLineWidth(0.3);
+
+                // Column 1 - Label
+                doc.setFillColor(240, 240, 240);
+                doc.rect(margin, y, col1LabelWidth, rowHeight, 'FD');
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text(label1, margin + 2, y + 6.5);
+
+                // Column 1 - Value
+                doc.setFillColor(255, 255, 255);
+                doc.rect(margin + col1LabelWidth, y, col1ValueWidth, rowHeight, 'FD');
+                doc.setFont('helvetica', 'normal');
+                doc.text(value1 || '', margin + col1LabelWidth + 2, y + 6.5);
+
+                // Column 2 - Label
+                doc.setFillColor(240, 240, 240);
+                doc.rect(col2Start, y, col2LabelWidth, rowHeight, 'FD');
+                doc.setFont('helvetica', 'bold');
+                doc.text(label2, col2Start + 2, y + 6.5);
+
+                // Column 2 - Value
+                doc.setFillColor(255, 255, 255);
+                doc.rect(col2Start + col2LabelWidth, y, col2ValueWidth, rowHeight, 'FD');
+                doc.setFont('helvetica', 'normal');
+                doc.text(value2 || '', col2Start + col2LabelWidth + 2, y + 6.5);
+
+                return y + rowHeight;
+            };
+
+            // Helper function to draw a full-width row
+            const drawFullWidthRow = (label, value, y) => {
+                const labelWidth = 30;
+                const valueWidth = contentWidth - labelWidth;
+
+                doc.setDrawColor(150, 150, 150);
+                doc.setLineWidth(0.3);
+
+                // Label
+                doc.setFillColor(240, 240, 240);
+                doc.rect(margin, y, labelWidth, rowHeight, 'FD');
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text(label, margin + 2, y + 6.5);
+
+                // Value
+                doc.setFillColor(255, 255, 255);
+                doc.rect(margin + labelWidth, y, valueWidth, rowHeight, 'FD');
+                doc.setFont('helvetica', 'normal');
+                doc.text(value || '', margin + labelWidth + 2, y + 6.5);
+
+                return y + rowHeight;
+            };
+
+            // Vehicle rows
+            yPos = draw2ColRow('Stock #:', vehicle.stockNumber || '', 'VIN:', vehicle.vin || '', yPos);
+            yPos = draw2ColRow('Year:', vehicle.year?.toString() || '', 'Make:', vehicle.make || '', yPos);
+            yPos = draw2ColRow('Model:', vehicle.model || '', 'Trim:', vehicle.trim || '', yPos);
+            yPos = drawFullWidthRow('Color:', vehicle.color || '', yPos);
+
+            yPos += 10;
+
+            // ============ COMPANY & CUSTOMER INFORMATION SECTION ============
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Company & Customer Information', margin, yPos);
+            yPos += 6;
+
+            yPos = drawFullWidthRow('Fleet Company:', vehicle.fleetCompany || '', yPos);
+            yPos = drawFullWidthRow('Operation Co.:', vehicle.operationCompany || '', yPos);
+
+            const customerName = vehicle.customer
+                ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || vehicle.customer.name || ''
+                : '';
+            yPos = drawFullWidthRow('Customer:', customerName, yPos);
+            yPos = drawFullWidthRow('Phone:', vehicle.customer?.phone || '', yPos);
+
+            yPos += 15;
+
+            // ============ ACKNOWLEDGEMENT & TERMS SECTION ============
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('Acknowledgement & Terms of Vehicle Pickup', margin, yPos);
+            yPos += 8;
+
+            const acknowledgementText = 'By signing below, the undersigned acknowledges receipt and acceptance of the vehicle described above. The vehicle has been inspected and is accepted in its present condition unless otherwise documented at time of delivery. Responsibility for the vehicle, including risk of loss or damage, transfers to the receiving party upon possession. Brandon Tomes Subaru Fleet Department is not responsible for personal property left in the vehicle after delivery.';
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(60, 60, 60);
+            const splitAcknowledgement = doc.splitTextToSize(acknowledgementText, contentWidth);
+            doc.text(splitAcknowledgement, margin, yPos);
+            yPos += splitAcknowledgement.length * 4.5 + 20;
+
+            // ============ SIGNATURE SECTION ============
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(0, 0, 0);
+
+            doc.text('Customer Signature:', margin, yPos);
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.line(margin + 40, yPos, pageWidth - 80, yPos);
+
+            doc.text('Date:', pageWidth - 70, yPos);
+            doc.line(pageWidth - 55, yPos, pageWidth - margin, yPos);
+
+            // ============ FOOTER ============
+            doc.setFontSize(7);
+            doc.setTextColor(150, 150, 150);
+            doc.setFont('helvetica', 'italic');
+            const footerText = `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+            // Save the PDF
+            const fileName = `Vehicle_Pickup_Acknowledgement_${vehicle.stockNumber}_${vehicle.year}_${vehicle.make}_${vehicle.model}.pdf`.replace(/\s+/g, '_');
+            doc.save(fileName);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+        } finally {
+            setIsGeneratingPDF(false);
+        }
     };
 
     const tabs = [
@@ -688,9 +863,9 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                 Delete
                             </Button>
                             <div className="flex gap-2">
-                                <Button variant="secondary" onClick={() => setShowLabelModal(true)}>
+                                <Button variant="secondary" onClick={generatePickupForm} disabled={isGeneratingPDF}>
                                     <Printer className="h-4 w-4" />
-                                    Print
+                                    {isGeneratingPDF ? 'Generating...' : 'Print'}
                                 </Button>
                                 {activeTab === 'details' && (
                                     isEditing ? (
@@ -778,12 +953,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                             />
                         )}
 
-                        {/* Label Print Modal */}
-                        <LabelPrintModal
-                            vehicle={vehicle}
-                            isOpen={showLabelModal}
-                            onClose={() => setShowLabelModal(false)}
-                        />
+
                     </motion.div>
                 </motion.div>
             )}
