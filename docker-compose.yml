@@ -1,0 +1,20 @@
+
+
+services:
+  vehicle-inventory:
+    build: .
+    container_name: vehicle-inventory-system
+    ports:
+      - "8080:80"
+      - "3000:3000"
+    volumes:
+      # Persist only the database directory
+      - vehicle-database:/app/data
+    restart: unless-stopped
+    environment:
+      - TZ=America/New_York
+      - NODE_ENV=production
+
+volumes:
+  vehicle-database:
+    driver: local

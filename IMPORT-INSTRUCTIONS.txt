@@ -1,0 +1,234 @@
+================================================================================
+SUBARU FLEET INVENTORY - EXPORT FILE STRUCTURE & IMPORT INSTRUCTIONS
+================================================================================
+
+This document describes the structure of the JSON export file from the 
+SubaruFleetInventory application so you can build an import feature in a 
+new version of the software.
+
+================================================================================
+EXPORT FILE FORMAT
+================================================================================
+
+The export file is a JSON file with the following top-level structure:
+
+{
+  "exportInfo": { ... },
+  "inventory": [ ... ],
+  "soldVehicles": [ ... ],
+  "tradeIns": [ ... ],
+  "documents": [ ... ]
+}
+
+================================================================================
+1. EXPORT INFO (exportInfo)
+================================================================================
+
+Metadata about the export:
+
+{
+  "exportDate": "2026-01-09T22:58:00.000Z",  // ISO 8601 date string
+  "version": "1.0",                           // Export format version
+  "source": "SubaruFleetInventory"            // Source application name
+}
+
+================================================================================
+2. INVENTORY (inventory) - Active Vehicles
+================================================================================
+
+Array of vehicle objects currently in inventory (not yet sold).
+
+VEHICLE OBJECT SCHEMA:
+{
+  "id": 1736456789000,           // Unique ID (timestamp-based integer)
+  "stockNumber": "CD12345",      // Stock number (string, format: "CD" + last 5 of VIN)
+  "vin": "JF2SKAAC1NH123456",    // 17-character VIN (uppercase string)
+  "year": 2024,                  // Model year (integer)
+  "make": "Subaru",              // Vehicle make (string)
+  "model": "Outback",            // Vehicle model (string)
+  "trim": "Premium",             // Trim level (string)
+  "color": "Crystal White Pearl", // Exterior color (string)
+  "fleetCompany": "Enterprise",  // Fleet company name (string, optional)
+  "operationCompany": "ABC Corp", // Operation company (string, optional)
+  "status": "in-stock",          // Vehicle status (string, see STATUS VALUES below)
+  "dateAdded": "2026-01-05T15:30:00.000Z",  // When added to system (ISO 8601)
+  "inStockDate": "2026-01-06T00:00:00.000Z", // When arrived in stock (ISO 8601, nullable)
+  "customer": { ... },           // Customer info object (nullable, see CUSTOMER OBJECT)
+  "documents": [ ... ],          // Array of document references (see DOCUMENT REFERENCE)
+  "pickupDate": "2026-01-10",    // Scheduled pickup date (string, YYYY-MM-DD, nullable)
+  "pickupTime": "10:00 AM",      // Scheduled pickup time (string, nullable)
+  "pickupNotes": "Call before",  // Pickup notes (string, nullable)
+  "tradeInId": 1736456700000,    // Associated trade-in ID (integer, nullable)
+  "created_at": "2026-01-05T15:30:00.000Z",  // Record creation timestamp
+  "updated_at": "2026-01-07T12:00:00.000Z"   // Record update timestamp
+}
+
+STATUS VALUES (lowercase kebab-case):
+- "in-transit"         - Vehicle is in transit, not yet at dealership
+- "pdi"               - Pre-Delivery Inspection in progress
+- "in-stock"          - Vehicle is in stock and available
+- "pending-pickup"    - Awaiting customer pickup
+- "pickup-scheduled"  - Pickup has been scheduled with date/time
+- "sold"              - Vehicle has been sold (moves to soldVehicles)
+
+CUSTOMER OBJECT (embedded in vehicle, nullable):
+{
+  "firstName": "John",           // Customer first name (string)
+  "lastName": "Doe",             // Customer last name (string)
+  "phone": "555-123-4567",       // Phone number (string)
+  "notes": "VIP customer",       // Customer notes (string)
+  "saleAmount": 35000.00,        // Sale price (float)
+  "saleDate": "2026-01-08",      // Sale date (string, YYYY-MM-DD)
+  "paymentMethod": "Finance",    // Payment method (string)
+  "paymentReference": "LOAN-123" // Payment reference (string)
+}
+
+DOCUMENT REFERENCE (embedded array):
+- This is typically an empty array [] or contains document IDs
+- Documents are stored separately in the documents table
+
+================================================================================
+3. SOLD VEHICLES (soldVehicles)
+================================================================================
+
+Array of vehicle objects that have been sold. Same schema as inventory vehicles
+but always have status "sold" and typically have complete customer information.
+
+The schema is identical to the inventory vehicle object above.
+
+================================================================================
+4. TRADE-INS (tradeIns) - Fleet Returns
+================================================================================
+
+Array of trade-in/fleet return vehicles.
+
+TRADE-IN OBJECT SCHEMA:
+{
+  "id": 1736456700000,          // Unique ID (timestamp-based integer)
+  "stockNumber": "TI-1736456700000", // Stock number (string, auto-generated or custom)
+  "vin": "1HGBH41JXMN109186",   // 17-character VIN (uppercase string)
+  "year": 2021,                 // Model year (integer)
+  "make": "Honda",              // Vehicle make (string)
+  "model": "Accord",            // Vehicle model (string)
+  "trim": "EX-L",               // Trim level (string, optional)
+  "color": "Silver",            // Exterior color (string)
+  "mileage": 45000,             // Odometer reading (integer, optional)
+  "notes": "Minor scratches",   // Notes about condition (string)
+  "pickedUp": 0,                // Has been picked up? (integer: 0=no, 1=yes)
+  "pickedUpDate": null,         // When picked up (ISO 8601 string, nullable)
+  "dateAdded": "2026-01-05T10:00:00.000Z", // When added (ISO 8601)
+  "created_at": "2026-01-05T10:00:00.000Z", // Record creation timestamp
+  "updated_at": "2026-01-05T10:00:00.000Z"  // Record update timestamp
+}
+
+================================================================================
+5. DOCUMENTS (documents) - PDF Attachments
+================================================================================
+
+Array of document metadata objects. Documents are PDF files attached to vehicles.
+NOTE: This only contains metadata; actual PDF files are stored on disk.
+
+DOCUMENT OBJECT SCHEMA:
+{
+  "id": "a1b2c3d4e5f6...",      // Unique document ID (32-char hex string)
+  "vehicleId": 1736456789000,   // ID of vehicle this document belongs to
+  "fileName": "buyer_order.pdf", // Original filename (string)
+  "filePath": "/app/data/documents/abc123.pdf", // Server file path (string)
+  "fileSize": 245760,           // File size in bytes (integer)
+  "uploadDate": "2026-01-06T14:30:00.000Z", // When uploaded (ISO 8601)
+  "created_at": "2026-01-06T14:30:00.000Z"  // Record creation timestamp
+}
+
+================================================================================
+IMPORT FEATURE IMPLEMENTATION GUIDE
+================================================================================
+
+When building the import feature in your new application:
+
+1. FILE VALIDATION
+   - Accept JSON files with .json extension
+   - Verify the file has required top-level keys: inventory, soldVehicles, tradeIns
+   - Check exportInfo.source === "SubaruFleetInventory" to confirm valid export
+
+2. ID HANDLING
+   - The "id" fields are timestamp-based integers (e.g., Date.now())
+   - You may need to regenerate IDs to avoid conflicts with existing data
+   - Preserve relationships (tradeInId references should be updated if IDs change)
+
+3. DATA IMPORT ORDER (recommended)
+   - Import tradeIns first (no dependencies)
+   - Import inventory second (may reference tradeIns via tradeInId)
+   - Import soldVehicles third (same schema as inventory)
+   - Skip documents if file storage paths don't match
+
+4. DUPLICATE HANDLING
+   - Check for existing VINs to avoid duplicates
+   - Offer user options: skip, overwrite, or create duplicate
+
+5. VALIDATION RULES
+   - VIN: Must be exactly 17 characters, uppercase, no I/O/Q letters
+   - Year: Should be between 1980 and current year + 1
+   - Status: Must be one of the valid status values listed above
+   - Dates: Should be valid ISO 8601 format or YYYY-MM-DD
+
+6. CUSTOMER DATA
+   - The "customer" field is a nested object, not a separate table
+   - Parse it as JSON if stored as string in database
+
+7. DOCUMENT FILES
+   - The documents array only contains metadata
+   - Actual PDF files are NOT included in the export
+   - You may want to show a warning that attached documents won't be available
+
+================================================================================
+SAMPLE IMPORT CODE (JavaScript/Node.js)
+================================================================================
+
+async function importData(jsonData) {
+  const data = JSON.parse(jsonData);
+  
+  // Verify source
+  if (data.exportInfo?.source !== 'SubaruFleetInventory') {
+    throw new Error('Invalid export file');
+  }
+  
+  // Import trade-ins
+  for (const tradeIn of data.tradeIns) {
+    await insertTradeIn(tradeIn);
+  }
+  
+  // Import inventory
+  for (const vehicle of data.inventory) {
+    await insertInventory(vehicle);
+  }
+  
+  // Import sold vehicles
+  for (const vehicle of data.soldVehicles) {
+    await insertSoldVehicle(vehicle);
+  }
+  
+  // Optionally import document metadata
+  for (const doc of data.documents) {
+    await insertDocumentMetadata(doc);
+  }
+  
+  return {
+    inventory: data.inventory.length,
+    soldVehicles: data.soldVehicles.length,
+    tradeIns: data.tradeIns.length,
+    documents: data.documents.length
+  };
+}
+
+================================================================================
+NOTES
+================================================================================
+
+- All timestamps are in UTC (ISO 8601 format)
+- Empty strings and null values should be handled gracefully
+- The status field uses lowercase kebab-case (e.g., "in-stock", not "In Stock")
+- The customer object is stored as JSON text in the database
+- The documents array in inventory/soldVehicles is typically empty; actual 
+  document records are in the separate documents array
+
+================================================================================

@@ -1,0 +1,3076 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Subaru Fleet Inventory Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        /* visionOS Inspired Design */
+        :root {
+            /* Softer slate-based dark palette - easier on the eyes */
+            --joy-bg-surface: #1e293b;
+            --joy-bg-gradient: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at bottom right, rgba(236, 72, 153, 0.05) 0%, transparent 50%),
+                linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
+            --joy-bg-level1: rgba(51, 65, 85, 0.6);
+            --joy-bg-level2: rgba(71, 85, 105, 0.7);
+            --joy-divider: rgba(226, 232, 240, 0.12);
+            --joy-text-primary: #e2e8f0;
+            --joy-text-secondary: #cbd5e1;
+            --joy-text-tertiary: #94a3b8;
+            --joy-primary-500: #0a84ff;
+            --joy-primary-600: #0066cc;
+            --joy-primary-400: #409cff;
+            --joy-success-500: #32d74b;
+            --joy-warning-500: #ff9f0a;
+            --joy-danger-500: #ff453a;
+            --joy-purple-500: #bf5af2;
+            --joy-pink-500: #ff375f;
+            --joy-teal-500: #64d2ff;
+            --joy-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            --joy-shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.4), 0 2px 6px 0 rgba(0, 0, 0, 0.3);
+            --joy-shadow-lg: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 4px 12px 0 rgba(0, 0, 0, 0.4);
+            --joy-shadow-glow: 0 0 20px rgba(10, 132, 255, 0.4);
+            --joy-radius-sm: 10px;
+            --joy-radius-md: 16px;
+            --joy-radius-lg: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--joy-bg-gradient);
+            background-attachment: fixed;
+            color: var(--joy-text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            scroll-behavior: smooth;
+        }
+
+        /* Smooth scrolling for all scrollable containers */
+        .main-content,
+        .modal-body,
+        .page-container,
+        [style*="overflow"] {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--joy-bg-gradient);
+            background-attachment: fixed;
+        }
+
+        .login-container {
+            background: rgba(51, 65, 85, 0.6);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border-radius: var(--joy-radius-lg);
+            padding: 3rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.1) inset, 0 20px 60px rgba(0, 0, 0, 0.6);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--joy-primary-500);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--joy-text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        /* Hamburger Menu Button */
+        .menu-toggle {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: rgba(51, 65, 85, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            width: 44px;
+            height: 44px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .menu-toggle:active {
+            transform: scale(0.95);
+            background: rgba(71, 85, 105, 0.9);
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--joy-text-primary);
+            border-radius: 2px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle span::before,
+        .menu-toggle span::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: var(--joy-text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle span::before {
+            top: -6px;
+        }
+
+        .menu-toggle span::after {
+            bottom: -6px;
+        }
+
+        .menu-toggle.active span {
+            background: transparent;
+        }
+
+        .menu-toggle.active span::before {
+            transform: rotate(45deg);
+            top: 0;
+        }
+
+        .menu-toggle.active span::after {
+            transform: rotate(-45deg);
+            bottom: 0;
+        }
+
+        /* Mobile Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: rgba(51, 65, 85, 0.95);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border-right: 1px solid var(--joy-divider);
+            padding: 1rem 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            z-index: 1000;
+            box-shadow: inset -1px 0 0 0 rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand {
+            padding: 0 1rem 0.75rem;
+            border-bottom: 1px solid var(--joy-divider);
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--joy-primary-500);
+        }
+
+        .nav-section {
+            padding: 0.25rem 0.625rem;
+            flex-shrink: 0;
+        }
+
+        .nav-section-title {
+            padding: 0.375rem 0.625rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--joy-text-tertiary);
+        }
+
+        .nav-item {
+            list-style: none;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.5rem 0.625rem;
+            margin: 0.0625rem 0;
+            border-radius: var(--joy-radius-sm);
+            color: var(--joy-text-secondary);
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(0, 122, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .nav-link:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .nav-link:hover {
+            background: var(--joy-bg-level1);
+            color: var(--joy-text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: var(--joy-primary-500);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+            transform: scale(1.02);
+        }
+
+        .nav-link.active:hover {
+            transform: scale(1.02) translateX(2px);
+        }
+
+        .nav-icon {
+            font-size: 1.125rem;
+            width: 1.125rem;
+            text-align: center;
+        }
+
+        .user-section {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--joy-divider);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            margin-bottom: 0.625rem;
+        }
+
+        .user-avatar {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            background: var(--joy-primary-500);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8125rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--joy-text-primary);
+        }
+
+        .user-role {
+            font-size: 0.6875rem;
+            color: var(--joy-text-tertiary);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            background: transparent;
+        }
+
+        .top-bar {
+            background: rgba(51, 65, 85, 0.7);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border-bottom: 1px solid var(--joy-divider);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05), var(--joy-shadow-sm);
+        }
+
+        .breadcrumb {
+            font-size: 0.875rem;
+            color: var(--joy-text-tertiary);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-container {
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--joy-text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .page-header p {
+            font-size: 0.875rem;
+            color: var(--joy-text-tertiary);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(51, 65, 85, 0.6);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-md);
+            padding: 1.25rem;
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, var(--joy-shadow-sm);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--joy-shadow-lg);
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .stat-card:active {
+            transform: translateY(-2px) scale(1.01);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--joy-text-tertiary);
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            opacity: 0.5;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--joy-text-primary);
+            line-height: 1;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1rem;
+            border: none;
+            border-radius: var(--joy-radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--joy-primary-500) 0%, var(--joy-primary-600) 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(71, 85, 105, 0.6);
+            backdrop-filter: blur(20px);
+            color: var(--joy-text-primary);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, var(--joy-shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.7);
+            transform: translateY(-2px);
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.1) inset, var(--joy-shadow-md);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--joy-danger-500) 0%, #D62828 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4);
+        }
+
+        .btn-danger:active {
+            transform: translateY(0);
+        }
+
+        .btn-sm,
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8125rem;
+        }
+
+        /* Table */
+        .modern-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(51, 65, 85, 0.6);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-md);
+            overflow: hidden;
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, var(--joy-shadow-sm);
+        }
+
+        .modern-table thead {
+            background: rgba(10, 132, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .modern-table th {
+            padding: 0.875rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--joy-text-tertiary);
+            border-bottom: 1px solid var(--joy-divider);
+        }
+
+        .modern-table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .modern-table tbody tr:hover {
+            background: rgba(10, 132, 255, 0.15);
+            transform: scale(1.005);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .modern-table tbody tr:active {
+            transform: scale(1.002);
+        }
+
+        .modern-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .modern-table td {
+            padding: 0.875rem 1rem;
+            font-size: 0.8125rem;
+            color: var(--joy-text-primary);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1.5;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .status-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .status-in-stock {
+            background: rgba(0, 122, 255, 0.15);
+            color: var(--joy-primary-500);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+        }
+
+        .status-in-transit {
+            background: rgba(255, 149, 0, 0.15);
+            color: var(--joy-warning-500);
+            border: 1px solid rgba(255, 149, 0, 0.2);
+        }
+
+        .status-pdi {
+            background: rgba(175, 82, 222, 0.15);
+            color: var(--joy-purple-500);
+            border: 1px solid rgba(175, 82, 222, 0.2);
+        }
+
+        .status-pending-pickup {
+            background: rgba(255, 149, 0, 0.15);
+            color: #D68000;
+            border: 1px solid rgba(255, 149, 0, 0.2);
+        }
+
+        .status-pickup-scheduled {
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--joy-success-500);
+            border: 1px solid rgba(52, 199, 89, 0.2);
+        }
+
+        .status-sold {
+            background: rgba(52, 199, 89, 0.15);
+            color: var(--joy-success-500);
+            border: 1px solid rgba(52, 199, 89, 0.2);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--joy-text-primary);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="email"],
+        input[type="time"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-sm);
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--joy-text-primary);
+            background: rgba(51, 65, 85, 0.5);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:hover,
+        select:hover,
+        textarea:hover {
+            border-color: rgba(10, 132, 255, 0.4);
+            background: rgba(71, 85, 105, 0.6);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--joy-primary-500);
+            box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2), 0 1px 0 0 rgba(255, 255, 255, 0.1) inset;
+            background: rgba(50, 50, 50, 0.9);
+            transform: scale(1.01);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(51, 65, 85, 0.95);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-lg);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.1) inset, 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--joy-divider);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--joy-text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        /* Custom scrollbars to match UI */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.6) rgba(30, 41, 59, 0.6);
+        }
+
+        *::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 999px;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(148, 163, 184, 0.8), rgba(100, 116, 139, 0.9));
+            border-radius: 999px;
+            border: 2px solid rgba(30, 41, 59, 0.6);
+        }
+
+        *::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(148, 163, 184, 1), rgba(100, 116, 139, 1));
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--joy-text-tertiary);
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--joy-text-primary);
+        }
+
+        /* Search and Filters */
+        .search-filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .search-box input {
+            width: 100%;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-select {
+            min-width: 160px;
+        }
+
+        /* Vehicle Grid (for dashboard cards) */
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .vehicle-card {
+            background: rgba(51, 65, 85, 0.6);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-md);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, var(--joy-shadow-sm);
+            cursor: pointer;
+        }
+
+        .vehicle-card:hover {
+            box-shadow: var(--joy-shadow-lg);
+            transform: translateY(-6px) scale(1.02);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .vehicle-card:active {
+            transform: translateY(-3px) scale(1.01);
+        }
+
+        /* Picked-up trade-in styling */
+        .vehicle-card.picked-up-card {
+            opacity: 0.6;
+            background: rgba(200, 200, 200, 0.5);
+            filter: grayscale(40%);
+        }
+
+        .vehicle-card.picked-up-card:hover {
+            opacity: 0.75;
+        }
+
+        .vehicle-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--joy-divider);
+            background: var(--joy-bg-level1);
+        }
+
+        .vehicle-stock {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--joy-primary-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vehicle-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--joy-text-primary);
+            margin-top: 0.25rem;
+        }
+
+        .vehicle-body {
+            padding: 1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--joy-text-tertiary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Status Popup */
+        .status-popup {
+            position: fixed;
+            background: rgba(51, 65, 85, 0.95);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--joy-radius-md);
+            box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.05) inset, 0 12px 40px rgba(0, 0, 0, 0.6);
+            padding: 0.5rem;
+            z-index: 3000;
+            min-width: 200px;
+            display: none;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .status-popup.active {
+            display: block;
+        }
+
+        .status-popup-option {
+            padding: 0.625rem;
+            cursor: pointer;
+            border-radius: var(--joy-radius-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.875rem;
+            position: relative;
+        }
+
+        .status-popup-option:hover {
+            background: rgba(0, 122, 255, 0.08);
+            transform: translateX(4px);
+            padding-left: 1rem;
+        }
+
+        .status-popup-option.selected {
+            background: rgba(0, 122, 255, 0.12);
+        }
+
+        .status-popup-option:active {
+            transform: translateX(2px) scale(0.98);
+        }
+
+        /* Info Items */
+        .info-item {
+            margin-bottom: 0.4rem;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--joy-text-tertiary);
+            margin-bottom: 0.25rem;
+        }
+
+        /* Custom Checkbox Styling */
+        .custom-checkbox {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .custom-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--joy-primary-500);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            background: rgba(71, 85, 105, 0.6);
+        }
+
+        .custom-checkbox input[type="checkbox"]:checked+.checkbox-label .checkbox-box {
+            background: var(--joy-success-500);
+            border-color: var(--joy-success-500);
+        }
+
+        .custom-checkbox input[type="checkbox"]:checked+.checkbox-label .checkbox-box::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .custom-checkbox:hover .checkbox-box {
+            border-color: var(--joy-primary-700);
+            transform: scale(1.05);
+        }
+
+        .custom-checkbox input[type="checkbox"]:checked:hover+.checkbox-label .checkbox-box {
+            background: var(--joy-success-700);
+            border-color: var(--joy-success-700);
+        }
+
+        .checkbox-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--joy-text-primary);
+        }
+
+        .info-value {
+            font-size: 0.875rem;
+            color: var(--joy-text-primary);
+        }
+
+        .vehicle-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Responsive - Tablet and Mobile */
+        @media (max-width: 1024px) {
+            .menu-toggle {
+                display: flex;
+            }
+
+            .sidebar-overlay {
+                display: block;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 4rem;
+            }
+
+            .page-header {
+                padding-top: 0.5rem;
+                padding-left: 3.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.375rem;
+            }
+
+            .page-container {
+                padding: 1.5rem;
+                padding-left: 1rem;
+            }
+
+            /* Improve search filter bar on tablet */
+            .search-filter-bar {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        /* Tablet - 2 column optimization */
+        @media (min-width: 481px) and (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .vehicle-info {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .modern-table {
+                font-size: 0.875rem;
+            }
+
+            .modern-table th,
+            .modern-table td {
+                padding: 0.5rem 0.75rem;
+            }
+
+            /* Dashboard sections stack on mobile */
+            #dashboard .page-container>div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8125rem;
+                min-height: 40px;
+            }
+
+            /* Compact buttons on mobile - hide text labels for action buttons */
+            .filter-group .btn {
+                padding: 0.5rem 0.625rem;
+                min-width: auto;
+            }
+
+            /* Add Vehicle button - more compact */
+            .filter-group .btn[onclick*="openAddModal"] {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+
+            .search-box input {
+                min-height: 44px;
+            }
+
+            .filter-select {
+                min-height: 40px;
+                min-width: 120px;
+                font-size: 0.8125rem;
+            }
+
+            .page-header {
+                padding-top: 3rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.25rem;
+            }
+
+            .page-header p {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Small mobile - even more compact */
+        @media (max-width: 480px) {
+            .page-header {
+                padding-top: 3.5rem;
+            }
+
+            .page-container {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                gap: 0.5rem;
+            }
+
+            .stat-card {
+                padding: 0.875rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stat-label {
+                font-size: 0.75rem;
+            }
+
+            /* Buttons become icon-like on very small screens */
+            .filter-group .btn {
+                padding: 0.5rem;
+                gap: 0.25rem;
+            }
+
+            .search-filter-bar {
+                gap: 0.5rem;
+            }
+
+            .filter-group {
+                gap: 0.5rem;
+            }
+
+            .filter-select {
+                min-width: 100px;
+                padding: 0.5rem;
+            }
+        }
+
+        /* iOS Safe Area Support */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
+                padding-bottom: max(0px, env(safe-area-inset-bottom));
+            }
+
+            .sidebar {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            }
+
+            .main-content {
+                padding-bottom: max(2rem, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Touch-friendly adjustments */
+        @media (hover: none) and (pointer: coarse) {
+
+            .nav-link,
+            .btn,
+            input,
+            select,
+            textarea {
+                -webkit-tap-highlight-color: rgba(10, 132, 255, 0.3);
+            }
+
+            .vehicle-row:active {
+                background: rgba(10, 132, 255, 0.15);
+            }
+
+            button:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--joy-text-tertiary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Fleet Inventory</h1>
+                <p>Sign in to your account</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" style="display: none;">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <span></span>
+        </button>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <h1>Fleet Inventory</h1>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-page="dashboard">
+                            <span class="nav-icon">📊</span>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="inventory">
+                            <span class="nav-icon">🚗</span>
+                            Inventory
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Status</div>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="in-transit">
+                            <span class="nav-icon">🚚</span>
+                            In-Transit
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="pdi">
+                            <span class="nav-icon">🔧</span>
+                            PDI
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="pending-pickup">
+                            <span class="nav-icon">⏳</span>
+                            Pending Pickup
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="pickup-scheduled">
+                            <span class="nav-icon">📅</span>
+                            Pickup Scheduled
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="sold">
+                            <span class="nav-icon">💰</span>
+                            Sold Vehicles
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Other</div>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="tradeins">
+                            <span class="nav-icon">🔄</span>
+                            Trade-Ins
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="payments">
+                            <span class="nav-icon">💳</span>
+                            Payments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-page="analytics">
+                            <span class="nav-icon">📈</span>
+                            Analytics
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="user-section">
+                <div class="user-info" id="userInfoClick" style="cursor: pointer; position: relative;">
+                    <div class="user-avatar" id="userAvatar">F</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">Fleet User</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                    <!-- User Dropdown Menu -->
+                    <div id="userDropdown"
+                        style="display: none; position: absolute; bottom: 100%; left: 0; right: 0; background: var(--joy-surface); border: 1px solid var(--joy-border); border-radius: var(--joy-radius-sm); margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;">
+                        <button onclick="openAdminPanel()"
+                            onmouseover="this.style.background='var(--joy-background-level1)'"
+                            onmouseout="this.style.background='transparent'"
+                            style="width: 100%; padding: 0.75rem; background: transparent; border: none; color: var(--joy-text-primary); text-align: left; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;">
+                            <span style="font-size: 1rem;">⚙️</span> System Settings
+                        </button>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="btn btn-secondary" style="width: 100%;">
+                    Sign Out
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="breadcrumb" id="breadcrumb">Dashboard</div>
+                <div class="top-bar-actions">
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        + Add Vehicle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pages Container -->
+            <div class="pages-wrapper">
+                <!-- Dashboard Page -->
+                <div id="dashboard" class="page active">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Dashboard</h1>
+                            <p>Overview of your fleet inventory</p>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card" onclick="navigateTo('inventory')">
+                                <div class="stat-card-header">
+                                    <div>
+                                        <div class="stat-label">In Stock</div>
+                                        <div class="stat-value" id="inStockVehicles">0</div>
+                                    </div>
+                                    <div class="stat-icon">📦</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="navigateTo('in-transit')">
+                                <div class="stat-card-header">
+                                    <div>
+                                        <div class="stat-label">In-Transit</div>
+                                        <div class="stat-value" id="inTransitCount">0</div>
+                                    </div>
+                                    <div class="stat-icon">🚚</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="navigateTo('sold')">
+                                <div class="stat-card-header">
+                                    <div>
+                                        <div class="stat-label">Sold</div>
+                                        <div class="stat-value" id="soldCount">0</div>
+                                    </div>
+                                    <div class="stat-icon">💰</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" onclick="navigateTo('tradeins')">
+                                <div class="stat-card-header">
+                                    <div>
+                                        <div class="stat-label">Trade-Ins</div>
+                                        <div class="stat-value" id="tradeInsCount">0</div>
+                                    </div>
+                                    <div class="stat-icon">🔄</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dashboard Sections Grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <!-- Pending Pickups (Top Left) -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); backdrop-filter: blur(30px) saturate(200%); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 1.25rem; box-shadow: var(--joy-shadow-sm);">
+                                <h2
+                                    style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--joy-text-primary);">
+                                    ⏳ Pending Pickup</h2>
+                                <div id="pendingPickups"></div>
+                            </div>
+
+                            <!-- Scheduled Pickups (Top Right) -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); backdrop-filter: blur(30px) saturate(200%); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 1.25rem; box-shadow: var(--joy-shadow-sm);">
+                                <h2
+                                    style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--joy-text-primary);">
+                                    📅 Scheduled Pickups</h2>
+                                <div id="scheduledPickups"></div>
+                            </div>
+
+                            <!-- Inventory Overview (Bottom - Full Width) -->
+                            <div
+                                style="grid-column: 1 / -1; background: rgba(51, 65, 85, 0.6); backdrop-filter: blur(30px) saturate(200%); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 1.25rem; box-shadow: var(--joy-shadow-sm);">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <h2 style="font-size: 1rem; font-weight: 600; color: var(--joy-text-primary);">🚗
+                                        Inventory Overview</h2>
+                                    <button class="btn btn-small btn-secondary" onclick="navigateTo('inventory')"
+                                        style="font-size: 0.8125rem;">View All →</button>
+                                </div>
+                                <div id="inventoryOverview"></div>
+                            </div>
+
+                            <!-- Weekly Sales (Full Width) -->
+                            <div
+                                style="grid-column: 1 / -1; background: rgba(51, 65, 85, 0.6); backdrop-filter: blur(30px) saturate(200%); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 1.25rem; box-shadow: var(--joy-shadow-sm);">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <div>
+                                        <h2
+                                            style="font-size: 1rem; font-weight: 600; color: var(--joy-text-primary); margin-bottom: 0.25rem;">
+                                            📊 Weekly Sales</h2>
+                                        <p id="weeklySalesDateRange"
+                                            style="font-size: 0.75rem; color: var(--joy-text-tertiary); margin: 0;"></p>
+                                    </div>
+                                    <button class="btn btn-small btn-secondary" onclick="navigateTo('sold')"
+                                        style="font-size: 0.8125rem;">View All →</button>
+                                </div>
+                                <div id="weeklySales"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Page -->
+                <div id="inventory" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Inventory</h1>
+                            <p>Manage your vehicle inventory</p>
+                        </div>
+
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="searchInput" placeholder="Search by stock #, VIN, make, model..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="makeFilter" class="filter-select">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <select id="statusFilter" class="filter-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="in-stock">In Stock</option>
+                                    <option value="in-transit">In-Transit</option>
+                                    <option value="pdi">PDI</option>
+                                    <option value="pending-pickup">Pending Pickup</option>
+                                    <option value="pickup-scheduled">Pickup Scheduled</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="openImportCSVModal()"
+                                    style="white-space: nowrap;">
+                                    📂 Import CSV
+                                </button>
+                                <button class="btn btn-primary" onclick="exportInventory()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="inventoryGrid"></div>
+                    </div>
+                </div>
+
+                <!-- In-Transit Page -->
+                <div id="in-transit" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>In-Transit</h1>
+                            <p>Vehicles currently in transit</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="transitSearchInput" placeholder="Search..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="transitMakeFilter" class="filter-select" onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportInTransit()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="transitGrid"></div>
+                    </div>
+                </div>
+
+                <!-- PDI Page -->
+                <div id="pdi" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>PDI</h1>
+                            <p>Vehicles in pre-delivery inspection</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="pdiSearchInput" placeholder="Search..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="pdiMakeFilter" class="filter-select" onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportPDI()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="pdiGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Pending Pickup Page -->
+                <div id="pending-pickup" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Pending Pickup</h1>
+                            <p>Vehicles awaiting customer pickup</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="pendingPickupSearchInput" placeholder="Search..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="pendingPickupMakeFilter" class="filter-select"
+                                    onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportPendingPickup()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="pendingPickupGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Pickup Scheduled Page -->
+                <div id="pickup-scheduled" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Pickup Scheduled</h1>
+                            <p>Vehicles with scheduled pickup appointments</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="pickupScheduledSearchInput" placeholder="Search..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="pickupScheduledMakeFilter" class="filter-select"
+                                    onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportPickupScheduled()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="pickupScheduledGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Sold Page -->
+                <div id="sold" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Sold Vehicles</h1>
+                            <p>Vehicles that have been sold</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="soldSearchInput" placeholder="Search..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group"
+                                style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <label
+                                        style="font-size: 0.75rem; color: var(--joy-text-secondary); white-space: nowrap;">From:</label>
+                                    <input type="date" id="soldStartDateFilter" class="filter-select"
+                                        style="min-width: 130px;" onchange="handleSoldDateRangeChange()">
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <label
+                                        style="font-size: 0.75rem; color: var(--joy-text-secondary); white-space: nowrap;">To:</label>
+                                    <input type="date" id="soldEndDateFilter" class="filter-select"
+                                        style="min-width: 130px;" onchange="handleSoldDateRangeChange()">
+                                </div>
+                                <select id="soldMonthFilter" class="filter-select"
+                                    onchange="handleSoldMonthYearChange()">
+                                    <option value="">All Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                                <select id="soldYearFilter" class="filter-select"
+                                    onchange="handleSoldMonthYearChange()">
+                                    <option value="">All Years</option>
+                                </select>
+                                <select id="soldMakeFilter" class="filter-select" onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-secondary" onclick="clearSoldFilters()"
+                                    style="white-space: nowrap; padding: 0.5rem 0.75rem;" title="Clear all filters">
+                                    ✕ Clear
+                                </button>
+                                <button class="btn btn-primary" onclick="exportSold()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="soldGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Trade-Ins Page -->
+                <div id="tradeins" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Trade-Ins</h1>
+                            <p>Used vehicles received in trade</p>
+                        </div>
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="tradeInSearchInput" placeholder="Search trade-ins..."
+                                    oninput="renderCurrentPage()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="tradeInMakeFilter" class="filter-select" onchange="renderCurrentPage()">
+                                    <option value="">All Makes</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="openManualTradeInModal()">
+                                    + Add Trade-In
+                                </button>
+                                <button class="btn btn-primary" onclick="exportTradeIns()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <div id="tradeInGrid"></div>
+                    </div>
+                </div>
+
+                <!-- Payments Page -->
+                <div id="payments" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Payment Tracking</h1>
+                            <p>Track all vehicle sale payments</p>
+                        </div>
+
+                        <!-- MoM and YoY Analytics Cards -->
+                        <div id="paymentAnalytics"
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                            <!-- Cards will be populated by JavaScript -->
+                        </div>
+
+                        <div class="search-filter-bar">
+                            <div class="search-box">
+                                <input type="text" id="paymentSearchInput" placeholder="Search payments..."
+                                    oninput="renderPaymentsPage()">
+                            </div>
+                            <div class="filter-group"
+                                style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <select id="paymentMonthFilter" class="filter-select" onchange="renderPaymentsPage()">
+                                    <option value="">All Months</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                                <select id="paymentYearFilter" class="filter-select" onchange="renderPaymentsPage()">
+                                    <option value="">All Years</option>
+                                </select>
+                                <select id="paymentMethodFilter" class="filter-select" onchange="renderPaymentsPage()">
+                                    <option value="">All Methods</option>
+                                    <option value="ACH">ACH</option>
+                                    <option value="Check">Check</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                    <option value="Wire Transfer">Wire Transfer</option>
+                                    <option value="Cash">Cash</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportPayments()"
+                                    style="white-space: nowrap; min-width: 100px;">
+                                    📥 Export
+                                </button>
+                            </div>
+                        </div>
+                        <table id="paymentsTable" class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Stock #</th>
+                                    <th>Vehicle</th>
+                                    <th>Customer</th>
+                                    <th>Sale Date</th>
+                                    <th style="text-align: right;">Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Reference #</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentsTableBody">
+                            </tbody>
+                            <tfoot id="paymentsTableFooter">
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analytics Page -->
+                <div id="analytics" class="page">
+                    <div class="page-container">
+                        <div class="page-header">
+                            <h1>Analytics</h1>
+                            <p>Fleet inventory analytics and insights</p>
+                        </div>
+
+                        <!-- Time Period Selector -->
+                        <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: center;">
+                            <label
+                                style="font-size: 0.875rem; color: var(--joy-text-secondary); font-weight: 600;">Revenue
+                                Period:</label>
+                            <select id="revenuePeriodFilter" class="filter-select" onchange="renderAnalytics()"
+                                style="min-width: 150px;">
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+
+                        <!-- Revenue Tracker Chart -->
+                        <div
+                            style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem; margin-bottom: 2rem;">
+                            <h2
+                                style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                💰 Revenue Tracker</h2>
+                            <canvas id="revenueChart" style="max-height: 400px;"></canvas>
+                        </div>
+
+                        <!-- Two Column Grid for Medium Charts -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <!-- Average Age Before Sale Chart -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    ⏱️ Avg Days to Sale</h2>
+                                <canvas id="ageChart" style="max-height: 300px;"></canvas>
+                            </div>
+
+                            <!-- Inventory Status Distribution -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    📊 Inventory Status</h2>
+                                <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Two Column Grid for Additional Charts -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <!-- Vehicles by Model Chart -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    🚗 Vehicles on Lot by Model</h2>
+                                <canvas id="makeChart" style="max-height: 300px;"></canvas>
+                            </div>
+
+                            <!-- Payment Method Distribution -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    💳 Payment Methods</h2>
+                                <canvas id="paymentChart" style="max-height: 300px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Two Column Grid for Bottom Charts -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <!-- Top Models Chart -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    🏆 Top Selling Models</h2>
+                                <canvas id="modelsChart" style="max-height: 350px;"></canvas>
+                            </div>
+
+                            <!-- Fleet Company Distribution Chart -->
+                            <div
+                                style="background: rgba(51, 65, 85, 0.6); border: 1px solid var(--joy-divider); border-radius: var(--joy-radius-md); padding: 2rem;">
+                                <h2
+                                    style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                    🏢 Fleet Companies on Lot</h2>
+                                <canvas id="fleetCompanyChart" style="max-height: 350px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Vehicle</h2>
+                <button class="close-btn" onclick="closeAddModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="vehicleForm" onsubmit="addVehicle(event)">
+                    <div class="form-group">
+                        <label for="vin">VIN</label>
+                        <input type="text" id="vin" maxlength="17" minlength="17" pattern="[A-HJ-NPR-Z0-9]{17}"
+                            title="VIN must be exactly 17 characters (letters and numbers, excluding I, O, Q)" required
+                            style="text-transform: uppercase;" oninput="autoGenerateStockNumber()">
+                    </div>
+                    <div class="form-group">
+                        <label for="stockNumber">Stock # <span
+                                style="font-size: 0.75rem; color: var(--joy-text-tertiary); font-weight: normal;">(Auto-generated
+                                from VIN)</span></label>
+                        <input type="text" id="stockNumber" required readonly
+                            style="background: rgba(71, 85, 105, 0.4); cursor: not-allowed;">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <input type="number" id="year" min="2000" max="2030" required
+                                title="Vehicle year must be between 2000 and 2030">
+                        </div>
+                        <div class="form-group">
+                            <label for="make">Make</label>
+                            <input type="text" id="make" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="model">Model</label>
+                            <input type="text" id="model" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="trim">Trim</label>
+                            <input type="text" id="trim" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="color">Color</label>
+                            <input type="text" id="color" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fleetCompany">Fleet Company</label>
+                            <input type="text" id="fleetCompany">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="addOperationCompany">Operation Company</label>
+                        <input type="text" id="addOperationCompany">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" required>
+                                <option value="in-stock">In Stock</option>
+                                <option value="in-transit">In-Transit</option>
+                                <option value="pdi">PDI</option>
+                                <option value="pending-pickup">Pending Pickup</option>
+                                <option value="pickup-scheduled">Pickup Scheduled</option>
+                                <option value="sold">Sold</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="inStockDate">In Stock Date</label>
+                            <input type="date" id="inStockDate">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Add Vehicle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Vehicle Details</h2>
+                <button class="close-btn" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Vehicle Information -->
+                <div id="detailContent"></div>
+
+                <!-- Customer Information Section -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Customer Information</h3>
+                    <form id="customerForm" onsubmit="saveCustomerInfo(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerFirstName">First Name</label>
+                                <input type="text" id="customerFirstName">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerLastName">Last Name</label>
+                                <input type="text" id="customerLastName">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">Phone Number</label>
+                            <input type="tel" id="customerPhone" pattern="[0-9]{3}-?[0-9]{3}-?[0-9]{4}"
+                                title="Phone format: 123-456-7890 or 1234567890" placeholder="123-456-7890">
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                            Save Customer Info
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Status Update Section -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Update Status</h3>
+                    <div class="form-group">
+                        <label for="detailStatus">Vehicle Status</label>
+                        <select id="detailStatus">
+                            <option value="in-stock">In Stock</option>
+                            <option value="in-transit">In-Transit</option>
+                            <option value="pdi">PDI</option>
+                            <option value="pending-pickup">Pending Pickup</option>
+                            <option value="pickup-scheduled">Pickup Scheduled</option>
+                            <option value="sold">Sold</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="updateVehicleStatus()" style="width: 100%;">
+                        Update Status
+                    </button>
+                </div>
+
+                <!-- Document Management Section -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Upload Documents</h3>
+
+                    <!-- Upload Document -->
+                    <div style="margin-bottom: 1rem;">
+                        <input type="file" id="pdfUploadInput" accept=".pdf" style="display: none;"
+                            onchange="handlePDFUpload(event)">
+                        <button class="btn btn-secondary" onclick="document.getElementById('pdfUploadInput').click()"
+                            style="width: 100%;">
+                            📎 Upload PDF Document
+                        </button>
+                    </div>
+
+                    <!-- Document List -->
+                    <div id="documentList" style="margin-top: 1rem;">
+                        <!-- Documents will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Payment Information Section (Only visible when car is sold) -->
+                <div id="paymentInfoSection"
+                    style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider); display: none;">
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Payment Information</h3>
+                    <form id="paymentForm" onsubmit="savePaymentInfo(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="saleAmount">Sale Amount ($)</label>
+                                <input type="number" id="saleAmount" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="saleDate">Sale Date</label>
+                                <input type="date" id="saleDate">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method</label>
+                                <select id="paymentMethod">
+                                    <option value="">Select...</option>
+                                    <option value="ACH">ACH</option>
+                                    <option value="Check">Check</option>
+                                    <option value="Credit Card">Credit Card</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentReference">Reference Number</label>
+                                <input type="text" id="paymentReference" placeholder="Transaction/Check #">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                            Save Payment Info
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Delete Vehicle Section -->
+                <div id="detailDeleteSection"
+                    style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <h3
+                        style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--joy-danger-500);">
+                        Delete Vehicle</h3>
+                    <p style="font-size: 0.875rem; color: var(--joy-text-tertiary); margin-bottom: 1rem;">Once you
+                        delete a vehicle, there is no going back. Please be certain.</p>
+                    <button class="btn btn-danger" onclick="deleteVehicle(window.currentVehicleId)"
+                        style="width: 100%;">
+                        Delete Vehicle
+                    </button>
+                </div>
+
+                <!-- Export Options -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <button class="btn btn-primary" onclick="saveVehicleDetailPDF()" style="width: 100%;">
+                        📄 Generate Pickup Form
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sold Modal -->
+    <div id="soldModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Mark as Sold</h2>
+                <button class="close-btn" onclick="closeSoldModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="soldForm" onsubmit="handleSoldSubmit(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="soldAmount">Sale Amount ($) *</label>
+                            <input type="number" id="soldAmount" placeholder="0.00" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="soldDate">Sale Date *</label>
+                            <input type="date" id="soldDate" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="soldPaymentMethod">Payment Method *</label>
+                            <select id="soldPaymentMethod" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="ACH">ACH</option>
+                                <option value="Check">Check</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="soldReference">Reference Number *</label>
+                            <input type="text" id="soldReference" placeholder="Transaction/Check #" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="soldNotes">Notes</label>
+                        <textarea id="soldNotes" rows="3"></textarea>
+                    </div>
+
+                    <!-- Trade-In Section -->
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--joy-divider);">
+                        <div class="form-group">
+                            <label for="hasTradeIn">Trade-In Vehicle?</label>
+                            <select id="hasTradeIn" onchange="toggleTradeInSection()">
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+
+                        <!-- Trade-In Details (hidden by default) -->
+                        <div id="tradeInSection"
+                            style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(0, 122, 255, 0.05); border-radius: var(--joy-radius-sm); border: 1px solid rgba(0, 122, 255, 0.2);">
+                            <h4
+                                style="font-size: 0.875rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary);">
+                                Trade-In Vehicle Details</h4>
+
+                            <div class="form-group">
+                                <label for="tradeInVin">VIN *</label>
+                                <input type="text" id="tradeInVin" maxlength="17" minlength="17"
+                                    pattern="[A-HJ-NPR-Z0-9]{17}"
+                                    title="VIN must be exactly 17 characters (letters and numbers, excluding I, O, Q)"
+                                    style="text-transform: uppercase;">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tradeInYear">Year *</label>
+                                    <input type="number" id="tradeInYear" min="1980" max="2030"
+                                        title="Vehicle year must be between 1980 and 2030">
+                                </div>
+                                <div class="form-group">
+                                    <label for="tradeInMake">Make *</label>
+                                    <input type="text" id="tradeInMake">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tradeInModel">Model *</label>
+                                    <input type="text" id="tradeInModel">
+                                </div>
+                                <div class="form-group">
+                                    <label for="tradeInColor">Color *</label>
+                                    <input type="text" id="tradeInColor">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Auto-Generated Stock Number</label>
+                                <input type="text" id="tradeInStockNumber" readonly
+                                    style="background: rgba(200, 200, 200, 0.3); cursor: not-allowed;"
+                                    placeholder="Will be auto-generated">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Complete Sale
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pickup Schedule Modal -->
+    <div id="pickupScheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Schedule Pickup</h2>
+                <button class="close-btn" onclick="closePickupScheduleModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="pickupScheduleForm" onsubmit="schedulePickup(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pickupDate">Pickup Date</label>
+                            <input type="date" id="pickupDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pickupTime">Pickup Time</label>
+                            <select id="pickupTime" required>
+                                <option value="">Select Time</option>
+                                <option value="08:00">8:00 AM</option>
+                                <option value="08:30">8:30 AM</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="09:30">9:30 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="12:30">12:30 PM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="13:30">1:30 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="14:30">2:30 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="15:30">3:30 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                                <option value="16:30">4:30 PM</option>
+                                <option value="17:00">5:00 PM</option>
+                                <option value="17:30">5:30 PM</option>
+                                <option value="18:00">6:00 PM</option>
+                                <option value="18:30">6:30 PM</option>
+                                <option value="19:00">7:00 PM</option>
+                                <option value="19:30">7:30 PM</option>
+                                <option value="20:00">8:00 PM</option>
+                                <option value="20:30">8:30 PM</option>
+                                <option value="21:00">9:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pickupNotes">Notes</label>
+                        <textarea id="pickupNotes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Schedule Pickup
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div id="importCSVModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Import Vehicles from CSV</h2>
+                <button class="close-btn" onclick="closeImportCSVModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background: rgba(10, 132, 255, 0.1); border: 1px solid rgba(10, 132, 255, 0.3); border-radius: var(--joy-radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+                    <h4
+                        style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--joy-text-primary);">
+                        📋 CSV Format Requirements</h4>
+                    <p style="font-size: 0.8125rem; color: var(--joy-text-secondary); margin-bottom: 0.5rem;">Your CSV
+                        file must include these columns in order:</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <p
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--joy-text-primary); margin-bottom: 0.25rem;">
+                                Required:</p>
+                            <ul
+                                style="font-size: 0.75rem; color: var(--joy-text-secondary); margin-left: 1rem; line-height: 1.5;">
+                                <li>Stock Number</li>
+                                <li>VIN (17 chars)</li>
+                                <li>Year</li>
+                                <li>Make</li>
+                                <li>Model</li>
+                                <li>Trim</li>
+                                <li>Color</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--joy-text-primary); margin-bottom: 0.25rem;">
+                                Optional:</p>
+                            <ul
+                                style="font-size: 0.75rem; color: var(--joy-text-secondary); margin-left: 1rem; line-height: 1.5;">
+                                <li>Fleet Company</li>
+                                <li>Operation Company</li>
+                                <li>Status</li>
+                                <li>In Stock Date</li>
+                                <li>Customer First Name</li>
+                                <li>Customer Last Name</li>
+                                <li>Customer Phone</li>
+                                <li>Sale Date</li>
+                                <li>Sale Amount</li>
+                                <li>Payment Method</li>
+                                <li>Payment Reference</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--joy-warning-500); margin-top: 0.5rem;">💡 If Sale Date is
+                        provided, vehicle will be imported as sold.</p>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <button class="btn btn-secondary" onclick="downloadExampleCSV()" style="width: 100%;">
+                        📥 Download Example CSV Template
+                    </button>
+                </div>
+
+                <form id="importCSVForm" onsubmit="handleCSVImport(event)">
+                    <div class="form-group">
+                        <label for="csvFileInput">Select CSV File</label>
+                        <input type="file" id="csvFileInput" accept=".csv" required
+                            style="width: 100%; padding: 0.5rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--joy-radius-sm); color: var(--text);">
+                    </div>
+
+                    <div id="importPreview"
+                        style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(0, 0, 0, 0.2); border-radius: var(--joy-radius-sm); max-height: 300px; overflow-y: auto;">
+                        <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Preview</h4>
+                        <div id="importPreviewContent"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Import Vehicles
+                    </button>
+                </form>
+
+                <div id="importResults" style="display: none; margin-top: 1rem;">
+                    <!-- Import results will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Duplicates Modal -->
+    <div id="removeDuplicatesModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Remove Duplicate Vehicles</h2>
+                <button class="close-btn" onclick="closeRemoveDuplicatesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: var(--joy-radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+                    <h4
+                        style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--joy-warning-500);">
+                        ⚠️ Warning</h4>
+                    <p style="font-size: 0.8125rem; color: var(--joy-text-secondary);">
+                        This will scan your inventory and sold vehicles for duplicate VINs. When duplicates are found,
+                        only the most recent entry will be kept.
+                    </p>
+                </div>
+
+                <div id="duplicateScanResults" style="display: none; margin-bottom: 1.5rem;">
+                    <!-- Scan results will be shown here -->
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="scanForDuplicates()" style="flex: 1;">
+                        🔍 Scan for Duplicates
+                    </button>
+                    <button id="removeDuplicatesBtn" class="btn btn-danger" onclick="confirmRemoveDuplicates()"
+                        style="flex: 1; display: none;">
+                        🗑️ Remove Duplicates
+                    </button>
+                </div>
+
+                <div id="duplicateRemovalResults" style="display: none; margin-top: 1rem;">
+                    <!-- Removal results will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Label Type Modal -->
+    <div id="labelTypeModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h2>Select Label Type</h2>
+                <button class="close-btn" onclick="closeLabelTypeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--joy-text-secondary); font-size: 0.95rem;">Choose which label
+                    you want to generate for this vehicle.</p>
+                <div style="display: grid; gap: 1rem;">
+                    <button class="btn btn-secondary label-type-option" onclick="chooseLabelType('folder')">
+                        <div style="text-align: left;">
+                            <div style="font-weight: 700; font-size: 1rem;">Folder Tag</div>
+                            <div style="font-size: 0.9rem; color: var(--joy-text-secondary);">OL125 • 2" × 4" • For
+                                vehicle folders</div>
+                        </div>
+                        <span style="font-weight: 700; font-size: 1.25rem;">→</span>
+                    </button>
+                    <button class="btn btn-secondary label-type-option" onclick="chooseLabelType('key')">
+                        <div style="text-align: left;">
+                            <div style="font-weight: 700; font-size: 1rem;">Key Tag</div>
+                            <div style="font-size: 0.9rem; color: var(--joy-text-secondary);">OL875 • 1" × 2.5935" • For
+                                key rings</div>
+                        </div>
+                        <span style="font-weight: 700; font-size: 1.25rem;">→</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Label Modal -->
+    <div id="labelModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Folder Tag - Online Labels OL125</h2>
+                <button class="close-btn" onclick="closeLabelModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.875rem; color: var(--joy-text-tertiary);">Preview - OL125 (2" × 4" Label)</p>
+                </div>
+
+                <!-- OL125 Label (2" x 4" = 192px x 384px at 96 DPI) -->
+                <div id="label" class="printable-label folder-label" style="
+                    width: 384px;
+                    height: 192px;
+                    background: rgba(51, 65, 85, 0.95);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    margin: 0 auto;
+                    padding: 12px;
+                    display: flex;
+                    gap: 12px;
+                    font-family: 'Ubuntu', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    box-sizing: border-box;
+                    page-break-inside: avoid;
+                ">
+                    <!-- Left Side - QR Code -->
+                    <div style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                        <div id="labelQR"></div>
+                    </div>
+
+                    <!-- Right Side - Vehicle Info -->
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0;">
+                        <div style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                            id="labelStockNumber"></div>
+                        <div style="font-size: 14px; font-weight: 600; color: #424245; margin-bottom: 8px; line-height: 1.2;"
+                            id="labelVehicle"></div>
+                        <div style="font-size: 11px; color: #86868b; line-height: 1.4; word-wrap: break-word;"
+                            id="labelInfo"></div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button onclick="printLabel()" class="btn btn-primary" style="flex: 1;">
+                        🖨️ Print Label
+                    </button>
+                    <button onclick="saveLabel()" class="btn btn-secondary" style="flex: 1;">
+                        💾 Save as Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Label Modal -->
+    <div id="keyLabelModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Key Tag - Online Labels OL875</h2>
+                <button class="close-btn" onclick="closeKeyLabelModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.25rem;">
+                    <p style="font-size: 0.875rem; color: var(--joy-text-tertiary);">Preview - OL875 (1" × 2.5935"
+                        Label)</p>
+                </div>
+                <div id="keyLabel" class="printable-label key-label" style="
+                    width: 260px;
+                    height: 96px;
+                    background: rgba(51, 65, 85, 0.95);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    margin: 0 auto;
+                    padding: 6px 9px;
+                    display: flex;
+                    gap: 8px;
+                    font-family: 'Ubuntu', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    box-sizing: border-box;
+                    page-break-inside: avoid;
+                    border-radius: 6px;
+                    align-items: center;
+                ">
+                    <div style="
+                        background: rgba(255, 255, 255, 0.9);
+                        color: #0f172a;
+                        padding: 6px 9px;
+                        border-radius: 4px;
+                        min-width: 72px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        text-align: center;
+                        line-height: 1.05;
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+                    ">
+                        <div style="font-size: 9px; font-weight: 600; color: #334155; letter-spacing: 0.02em;">Stock #
+                        </div>
+                        <div id="keyLabelStock"
+                            style="font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                    </div>
+                    <div
+                        style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; justify-content: center; line-height: 1.1;">
+                        <div id="keyLabelVehicle"
+                            style="font-size: 11px; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                        <div id="keyLabelVin"
+                            style="font-size: 9px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                        <div id="keyLabelColor"
+                            style="font-size: 9px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                        <div id="keyLabelFleet"
+                            style="font-size: 9px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                        <div id="keyLabelOperation"
+                            style="font-size: 9px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.25rem;">
+                    <button onclick="printKeyLabel()" class="btn btn-primary" style="flex: 1;">
+                        🖨️ Print Key Tag
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Label Position Selector Modal -->
+    <div id="labelPositionModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Select Label Position</h2>
+                <button class="close-btn" onclick="closeLabelPositionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--joy-text-secondary); font-size: 0.875rem;">
+                    Click on the position where you want to print the label on your OL125 sheet (2 columns × 5 rows)
+                </p>
+
+                <!-- Label Grid Preview -->
+                <div id="labelGrid" style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 0.75rem;
+                    margin-bottom: 1.5rem;
+                    max-width: 500px;
+                    width: 100%;
+                    margin-left: auto;
+                    margin-right: auto;
+                ">
+                    <!-- Generate 10 label positions (2 cols × 5 rows) -->
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="printSelectedPosition()" class="btn btn-primary" style="flex: 1;">
+                        🖨️ Print Label
+                    </button>
+                    <button onclick="closeLabelPositionModal()" class="btn btn-secondary" style="flex: 1;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Label Position Selector Modal -->
+    <div id="keyLabelPositionModal" class="modal">
+        <div class="modal-content" style="max-width: 820px;">
+            <div class="modal-header">
+                <h2>Select Key Tag Position</h2>
+                <button class="close-btn" onclick="closeKeyLabelPositionModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--joy-text-secondary); font-size: 0.875rem;">
+                    Click on the position where you want to print the key tag on your OL875 sheet (3 columns × 10 rows)
+                </p>
+                <div id="keyLabelGrid" class="key-label-grid" style="
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 0.4rem;
+                    margin-bottom: 1.5rem;
+                    max-width: 760px;
+                    width: 100%;
+                    margin-left: auto;
+                    margin-right: auto;
+                ">
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="printSelectedKeyPosition()" class="btn btn-primary" style="flex: 1;">
+                        🖨️ Print Key Tag
+                    </button>
+                    <button onclick="closeKeyLabelPositionModal()" class="btn btn-secondary" style="flex: 1;">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .label-type-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--joy-divider);
+            background: rgba(71, 85, 105, 0.3);
+        }
+
+        /* Label Position Grid Styles */
+        .label-position-btn {
+            aspect-ratio: 2/1;
+            min-height: 60px;
+            border: 2px solid var(--joy-divider);
+            border-radius: var(--joy-radius-sm);
+            background: rgba(71, 85, 105, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--joy-text-secondary);
+            padding: 0.5rem;
+        }
+
+        .label-position-btn:hover {
+            background: rgba(71, 85, 105, 0.5);
+            border-color: var(--joy-primary-500);
+            transform: scale(1.05);
+        }
+
+        .label-position-btn.selected {
+            background: var(--joy-primary-500);
+            border-color: var(--joy-primary-500);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .key-label-grid .label-position-btn {
+            min-height: 44px;
+        }
+
+        @media print {
+            @page {
+                size: 8.5in 11in;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 8.5in !important;
+                height: 11in !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            /* Hide everything except the active printing label */
+            body>*:not(.printing) {
+                display: none !important;
+            }
+
+            .printing {
+                position: fixed !important;
+                margin: 0 !important;
+                visibility: visible !important;
+                box-sizing: border-box !important;
+            }
+
+            .printing * {
+                visibility: visible !important;
+                color: #000 !important;
+            }
+
+            .printing.folder-label {
+                display: flex !important;
+                width: 4in !important;
+                height: 2in !important;
+                top: var(--print-top, 0.5in) !important;
+                left: var(--print-left, 0.1875in) !important;
+                border: 1px solid #ccc !important;
+                background: white !important;
+                padding: 0.125in !important;
+                gap: 12px !important;
+                flex-direction: row !important;
+            }
+
+            .printing.key-label {
+                display: flex !important;
+                width: 2.5935in !important;
+                height: 1in !important;
+                top: var(--print-top, 0.5in) !important;
+                left: var(--print-left, 0.21975in) !important;
+                border: none !important;
+                background: white !important;
+                padding: 0.07in 0.09in !important;
+                gap: 8px !important;
+                border-radius: 0.125in !important;
+                align-items: center !important;
+            }
+        }
+    </style>
+
+    <!-- Trade-In Modal -->
+    <div id="tradeInModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tradeInModalTitle">Add Trade-In</h2>
+                <button class="close-btn" onclick="closeTradeInModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="tradeInForm">
+                    <div class="form-group">
+                        <label for="tradeStockNumber">Stock # <span id="tradeStockNumberHint"
+                                style="display: none; font-size: 0.75rem; color: var(--joy-text-tertiary); font-weight: normal;">(Optional
+                                - leave blank for auto-generated)</span></label>
+                        <input type="text" id="tradeStockNumber">
+                    </div>
+                    <div class="form-group">
+                        <label for="tradeVin">VIN</label>
+                        <input type="text" id="tradeVin" maxlength="17" minlength="17" pattern="[A-HJ-NPR-Z0-9]{17}"
+                            title="VIN must be exactly 17 characters (letters and numbers, excluding I, O, Q)" required
+                            style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tradeYear">Year</label>
+                            <input type="number" id="tradeYear" min="1980" max="2030" required
+                                title="Vehicle year must be between 1980 and 2030">
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeMake">Make</label>
+                            <input type="text" id="tradeMake" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tradeModel">Model</label>
+                            <input type="text" id="tradeModel" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeTrim">Trim</label>
+                            <input type="text" id="tradeTrim">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tradeColor">Color</label>
+                            <input type="text" id="tradeColor" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tradeMileage">Mileage</label>
+                            <input type="number" id="tradeMileage" min="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="tradeNotes">Notes</label>
+                        <textarea id="tradeNotes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        Add Trade-In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade-In Detail Modal -->
+    <div id="tradeInDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Trade-In Details</h2>
+                <button class="close-btn" onclick="closeTradeInDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="tradeInDetailContent"></div>
+
+                <!-- Delete Trade-In Section -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--joy-divider);">
+                    <h3
+                        style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--joy-danger-500);">
+                        Delete Trade-In</h3>
+                    <p style="font-size: 0.875rem; color: var(--joy-text-tertiary); margin-bottom: 1rem;">Once you
+                        delete this trade-in, there is no going back. Please be certain.</p>
+                    <button class="btn btn-danger" onclick="deleteTradeIn(window.currentTradeInId)"
+                        style="width: 100%;">
+                        Delete Trade-In
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanelModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>⚙️ System Settings</h2>
+                <button class="close-btn" onclick="closeAdminPanel()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; gap: 2rem;">
+                    <!-- Data Management Section -->
+                    <div>
+                        <h3
+                            style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--joy-text-primary); border-bottom: 2px solid var(--joy-divider); padding-bottom: 0.5rem;">
+                            Data Management
+                        </h3>
+
+                        <!-- Fix In-Transit Dates -->
+                        <div
+                            style="background: var(--joy-background-level1); padding: 1.5rem; border-radius: var(--joy-radius-md); margin-bottom: 1rem; border: 1px solid var(--joy-border);">
+                            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                                <div style="font-size: 2rem;">🔧</div>
+                                <div style="flex: 1;">
+                                    <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Fix In-Transit
+                                        Dates</h4>
+                                    <p
+                                        style="font-size: 0.875rem; color: var(--joy-text-tertiary); margin-bottom: 1rem;">
+                                        Remove in-stock dates from all vehicles currently marked as "In-Transit". This
+                                        ensures accurate inventory tracking.
+                                    </p>
+                                    <button class="btn btn-secondary" onclick="fixInTransitDates()"
+                                        style="width: 100%;">
+                                        Run Fix
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Remove Duplicates -->
+                        <div
+                            style="background: var(--joy-background-level1); padding: 1.5rem; border-radius: var(--joy-radius-md); border: 1px solid var(--joy-border);">
+                            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                                <div style="font-size: 2rem;">🔍</div>
+                                <div style="flex: 1;">
+                                    <h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">Remove
+                                        Duplicate Vehicles</h4>
+                                    <p
+                                        style="font-size: 0.875rem; color: var(--joy-text-tertiary); margin-bottom: 1rem;">
+                                        Scan for and remove duplicate vehicles based on VIN numbers. Older entries will
+                                        be kept.
+                                    </p>
+                                    <button class="btn btn-secondary" onclick="openRemoveDuplicatesModal()"
+                                        style="width: 100%;">
+                                        Scan & Remove Duplicates
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Popup -->
+    <div id="statusPopup" class="status-popup"></div>
+
+    <!-- Custom Notification Modal -->
+    <div id="notificationModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; animation: slideDown 0.3s ease-out;">
+            <div class="modal-body" style="text-align: center; padding: 2rem;">
+                <div id="notificationIcon" style="font-size: 3rem; margin-bottom: 1rem;"></div>
+                <div id="notificationMessage"
+                    style="font-size: 1rem; color: var(--joy-text-primary); margin-bottom: 1.5rem;"></div>
+                <button id="notificationOkBtn" class="btn btn-primary" style="width: 100%;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px; animation: slideDown 0.3s ease-out;">
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="display: flex; align-items: start; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="font-size: 2rem; color: var(--joy-warning-500);">⚠️</div>
+                    <div id="confirmMessage" style="font-size: 1rem; color: var(--joy-text-primary); flex: 1;"></div>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="confirmCancelBtn" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                    <button id="confirmOkBtn" class="btn btn-danger" style="flex: 1;">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Selection Modal -->
+    <div id="exportModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2 id="exportModalTitle">Export Vehicles</h2>
+                <button class="close-btn" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <label style="font-weight: 600; color: var(--joy-text-primary);">
+                            <input type="checkbox" id="selectAllExport" onchange="toggleSelectAllExport()"
+                                style="margin-right: 0.5rem;">
+                            Select All (<span id="exportItemCount">0</span> items)
+                        </label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-sm btn-secondary" onclick="exportSelected('csv')"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">
+                                📄 Export CSV
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="exportSelected('xlsx')"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">
+                                📊 Export Excel
+                            </button>
+                        </div>
+                    </div>
+                    <div id="exportItemsList"
+                        style="max-height: 400px; overflow-y: auto; background: rgba(30, 41, 59, 0.5); border-radius: var(--joy-radius-sm); padding: 0.75rem;">
+                        <!-- Items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include app.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
