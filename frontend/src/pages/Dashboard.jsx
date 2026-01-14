@@ -153,16 +153,12 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            {/* Calendar Section */}
-            <div className="mb-6">
-                <DashboardCalendar
-                    scheduledPickups={scheduledPickups}
-                    pendingPickups={pendingPickups}
-                />
-            </div>
-
             {/* Dashboard Sections Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Calendar - Small Card */}
+                <DashboardCalendar
+                    scheduledPickups={scheduledPickups}
+                />
                 {/* Pending Pickups */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
