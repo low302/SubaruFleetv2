@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Calendar, Maximize2, X, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, X, ArrowLeft } from 'lucide-react';
 
 export default function DashboardCalendar({ scheduledPickups = [] }) {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -10,17 +10,14 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Build events map from scheduled pickups
+    // Build events map
     const eventsMap = useMemo(() => {
         const map = {};
         scheduledPickups.forEach(vehicle => {
             if (vehicle.pickupDate) {
                 const dateKey = new Date(vehicle.pickupDate).toDateString();
                 if (!map[dateKey]) map[dateKey] = [];
-                map[dateKey].push({
-                    vehicle,
-                    time: vehicle.pickupTime || '09:00'
-                });
+                map[dateKey].push({ vehicle, time: vehicle.pickupTime || '09:00' });
             }
         });
         return map;
@@ -54,10 +51,8 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
         return days;
     }, [currentDate, daysInMonth, startingDay, eventsMap, today]);
 
-    // Hours for day view
     const hours = Array.from({ length: 13 }, (_, i) => i + 7);
 
-    // Get events for selected date organized by hour
     const dayEvents = useMemo(() => {
         if (!selectedDate) return {};
         const events = eventsMap[selectedDate.toDateString()] || [];
@@ -70,72 +65,42 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
         return byHour;
     }, [selectedDate, eventsMap]);
 
-    const handleDayClick = (date) => {
-        if (date) setSelectedDate(date);
-    };
-
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Count upcoming events this week
+    const upcomingCount = useMemo(() => {
+        let count = 0;
+        const weekFromNow = new Date(today);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+        scheduledPickups.forEach(v => {
+            if (v.pickupDate) {
+                const d = new Date(v.pickupDate);
+                if (d >= today && d <= weekFromNow) count++;
+            }
+        });
+        return count;
+    }, [scheduledPickups, today]);
 
     return (
         <>
-            {/* Dashboard Widget - Proper sized card */}
+            {/* Compact Inline Widget */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="glass rounded-xl p-5"
+                onClick={() => setIsModalOpen(true)}
+                className="glass rounded-xl p-3 cursor-pointer hover:bg-slate-700/30 transition-colors"
             >
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
                         <Calendar className="h-5 w-5 text-primary" />
-                        <h2 className="text-lg font-semibold text-slate-100">Calendar</h2>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <button onClick={prevMonth} className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="text-sm font-medium text-slate-300 min-w-[100px] text-center">
-                            {currentDate.toLocaleString('default', { month: 'short', year: 'numeric' })}
-                        </span>
-                        <button onClick={nextMonth} className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 ml-2"
-                            title="Expand"
-                        >
-                            <Maximize2 className="h-4 w-4" />
-                        </button>
+                    <div>
+                        <p className="text-sm font-medium text-slate-200">
+                            {today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                            {upcomingCount > 0 ? `${upcomingCount} pickup${upcomingCount !== 1 ? 's' : ''} this week` : 'No upcoming pickups'}
+                        </p>
                     </div>
-                </div>
-
-                {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-1">
-                    {weekDays.map(d => (
-                        <div key={d} className="text-center text-xs font-medium text-slate-500 py-1">{d.charAt(0)}</div>
-                    ))}
-                    {calendarDays.map(({ day, isToday, events, key }) => (
-                        <div
-                            key={key}
-                            className={`
-                                aspect-square flex items-center justify-center text-xs rounded-md relative
-                                ${!day ? '' : 'hover:bg-slate-700/50 cursor-pointer transition-colors'}
-                                ${isToday ? 'bg-primary/20 text-primary font-bold ring-1 ring-primary/50' : 'text-slate-300'}
-                            `}
-                            onClick={() => day && setIsModalOpen(true)}
-                        >
-                            {day && (
-                                <>
-                                    <span>{day}</span>
-                                    {events?.length > 0 && (
-                                        <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-success" />
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
                 </div>
             </motion.div>
 
@@ -184,7 +149,6 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
                             </div>
 
                             {selectedDate ? (
-                                /* Day View */
                                 <div className="flex-1 overflow-y-auto p-4">
                                     <div className="space-y-1">
                                         {hours.map(hour => {
@@ -209,7 +173,6 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
                                     </div>
                                 </div>
                             ) : (
-                                /* Month View */
                                 <>
                                     <div className="flex items-center justify-between px-4 py-3 bg-slate-800/30">
                                         <button onClick={prevMonth} className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
@@ -222,7 +185,7 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
                                     </div>
                                     <div className="p-4">
                                         <div className="grid grid-cols-7 gap-1 mb-2">
-                                            {weekDays.map(d => (
+                                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
                                                 <div key={d} className="text-center text-xs font-medium text-slate-500 py-1">{d}</div>
                                             ))}
                                         </div>
@@ -230,7 +193,7 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
                                             {calendarDays.map(({ day, date, isToday, events, key }) => (
                                                 <div
                                                     key={key}
-                                                    onClick={() => day && handleDayClick(date)}
+                                                    onClick={() => day && setSelectedDate(date)}
                                                     className={`
                                                         aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative cursor-pointer transition-colors
                                                         ${!day ? '' : 'hover:bg-slate-700/50'}
