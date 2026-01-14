@@ -40,7 +40,8 @@ export default function Analytics() {
 
             setStats({
                 totalInventory: inv.length,
-                inStock: inv.filter(v => v.status === 'in-stock').length,
+                // In Stock includes: in-stock, pdi, pending-pickup, pickup-scheduled
+                inStock: inv.filter(v => ['in-stock', 'pdi', 'pending-pickup', 'pickup-scheduled'].includes(v.status)).length,
                 inTransit: inv.filter(v => v.status === 'in-transit').length,
                 pdi: inv.filter(v => v.status === 'pdi').length,
                 pendingPickup: inv.filter(v => v.status === 'pending-pickup').length,
@@ -56,7 +57,6 @@ export default function Analytics() {
     };
 
     const statCards = [
-        { label: 'Total Inventory', value: stats.totalInventory, icon: Car, color: 'bg-primary/20', iconColor: 'text-primary' },
         { label: 'In Stock', value: stats.inStock, icon: Car, color: 'bg-blue-500/20', iconColor: 'text-blue-400' },
         { label: 'In-Transit', value: stats.inTransit, icon: Truck, color: 'bg-amber-500/20', iconColor: 'text-amber-400' },
         { label: 'PDI', value: stats.pdi, icon: Wrench, color: 'bg-purple-500/20', iconColor: 'text-purple-400' },

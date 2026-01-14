@@ -7,6 +7,7 @@ import { StatusBadge } from "../components/ui/badge";
 import { inventory, soldVehicles, tradeIns } from "../services/api";
 import VehicleDetailModal from "../components/modals/VehicleDetailModal";
 import WeeklySalesModal from "../components/modals/WeeklySalesModal";
+import DashboardCalendar from "../components/DashboardCalendar";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -18,7 +19,6 @@ export default function Dashboard() {
     });
     const [pendingPickups, setPendingPickups] = useState([]);
     const [scheduledPickups, setScheduledPickups] = useState([]);
-    const [recentInventory, setRecentInventory] = useState([]);
     const [weeklySales, setWeeklySales] = useState([]);
     const [weeklySalesDateRange, setWeeklySalesDateRange] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -38,17 +38,12 @@ export default function Dashboard() {
                 tradeIns.getAll(),
             ]);
 
-            // Calculate stats
-            const inStock = inventoryData.filter((v) => v.status === "in-stock").length;
+            // Calculate stats - In Stock includes: in-stock, pdi, pending-pickup, pickup-scheduled
+            const inStockStatuses = ['in-stock', 'pdi', 'pending-pickup', 'pickup-scheduled'];
+            const inStock = inventoryData.filter((v) => inStockStatuses.includes(v.status)).length;
             const inTransit = inventoryData.filter((v) => v.status === "in-transit").length;
             const pending = inventoryData.filter((v) => v.status === "pending-pickup");
             const scheduled = inventoryData.filter((v) => v.status === "pickup-scheduled");
-
-            // Get recent inventory (last 5 vehicles added, excluding in-transit)
-            const recentInv = inventoryData
-                .filter((v) => v.status !== "in-transit")
-                .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
-                .slice(0, 5);
 
             // Calculate weekly sales
             const today = new Date();
@@ -77,7 +72,6 @@ export default function Dashboard() {
             });
             setPendingPickups(pending);
             setScheduledPickups(scheduled);
-            setRecentInventory(recentInv);
             setWeeklySales(weekSales);
         } catch (error) {
             console.error("Failed to load dashboard data:", error);
@@ -130,7 +124,7 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {statCards.map((card, index) => (
                     <motion.div
                         key={card.label}
@@ -157,6 +151,14 @@ export default function Dashboard() {
                         </CardSpotlight>
                     </motion.div>
                 ))}
+            </div>
+
+            {/* Calendar Section */}
+            <div className="mb-6">
+                <DashboardCalendar
+                    scheduledPickups={scheduledPickups}
+                    pendingPickups={pendingPickups}
+                />
             </div>
 
             {/* Dashboard Sections Grid */}
@@ -224,44 +226,7 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Inventory Overview - Full Width */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="glass rounded-xl p-5 lg:col-span-2"
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <Car className="h-5 w-5 text-primary" />
-                            <h2 className="text-lg font-semibold text-slate-100">
-                                Inventory Overview
-                            </h2>
-                        </div>
-                        <button
-                            onClick={() => navigate('/inventory')}
-                            className="text-sm text-slate-400 hover:text-primary transition-colors"
-                        >
-                            View All →
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                        {recentInventory.length > 0 ? (
-                            recentInventory.map((vehicle) => (
-                                <VehicleCard
-                                    key={vehicle.id}
-                                    vehicle={vehicle}
-                                    compact
-                                    onClick={() => setSelectedVehicle(vehicle)}
-                                />
-                            ))
-                        ) : (
-                            <p className="text-slate-500 text-sm py-4 text-center col-span-full">
-                                No vehicles in inventory
-                            </p>
-                        )}
-                    </div>
-                </motion.div>
+
 
                 {/* Weekly Sales - Full Width */}
                 <motion.div
