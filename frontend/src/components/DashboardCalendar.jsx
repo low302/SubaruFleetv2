@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Maximize2, X } from 'lucide-react';
 
-export default function DashboardCalendar({ scheduledPickups = [], pendingPickups = [] }) {
+export default function DashboardCalendar({ scheduledPickups = [] }) {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -38,29 +38,18 @@ export default function DashboardCalendar({ scheduledPickups = [], pendingPickup
     };
 
     const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
-
     const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-    const prevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    };
-
-    const nextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    };
-
-    const goToToday = () => {
-        setCurrentDate(new Date());
-    };
+    const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    const goToToday = () => setCurrentDate(new Date());
 
     // Generate calendar days
     const calendarDays = useMemo(() => {
         const days = [];
-        // Empty cells for days before month starts
         for (let i = 0; i < startingDay; i++) {
             days.push({ day: null, key: `empty-${i}` });
         }
-        // Days of the month
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const dateKey = date.toDateString();
@@ -71,162 +60,176 @@ export default function DashboardCalendar({ scheduledPickups = [], pendingPickup
         return days;
     }, [currentDate, daysInMonth, startingDay, eventsMap, today]);
 
-    // Get upcoming events for expanded view
+    // Get upcoming events
     const upcomingEvents = useMemo(() => {
         const events = [];
         scheduledPickups.forEach(vehicle => {
             if (vehicle.pickupDate) {
                 const pickupDate = new Date(vehicle.pickupDate);
                 if (pickupDate >= today) {
-                    events.push({
-                        date: pickupDate,
-                        vehicle,
-                        time: vehicle.pickupTime || 'TBD',
-                        type: 'Scheduled Pickup'
-                    });
+                    events.push({ date: pickupDate, vehicle, time: vehicle.pickupTime || 'TBD' });
                 }
             }
         });
-        return events.sort((a, b) => a.date - b.date).slice(0, 5);
+        return events.sort((a, b) => a.date - b.date);
     }, [scheduledPickups, today]);
 
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const weekDaysFull = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Compact Calendar Grid
+    const CalendarGrid = ({ compact = false }) => (
+        <div className={compact ? "p-2" : "p-4"}>
+            <div className={`grid grid-cols-7 gap-0.5 mb-1`}>
+                {(compact ? weekDays : weekDaysFull).map((day, i) => (
+                    <div key={i} className={`text-center font-medium text-slate-500 ${compact ? 'text-[9px] py-0.5' : 'text-xs py-1'}`}>
+                        {day}
+                    </div>
+                ))}
+            </div>
+            <div className={`grid grid-cols-7 ${compact ? 'gap-0.5' : 'gap-1'}`}>
+                {calendarDays.map(({ day, isToday, events, key }) => (
+                    <div
+                        key={key}
+                        className={`
+                            ${compact ? 'aspect-square' : 'aspect-square'} flex flex-col items-center justify-center rounded relative
+                            ${!day ? '' : 'hover:bg-slate-700/50 cursor-pointer transition-colors'}
+                            ${isToday ? 'bg-primary/20 text-primary font-bold ring-1 ring-primary/50' : 'text-slate-300'}
+                            ${compact ? 'text-[10px]' : 'text-sm'}
+                        `}
+                    >
+                        {day && (
+                            <>
+                                <span>{day}</span>
+                                {events.length > 0 && (
+                                    <div className={`absolute ${compact ? 'bottom-0' : 'bottom-0.5'} flex gap-0.5`}>
+                                        {events.slice(0, 2).map((_, i) => (
+                                            <div key={i} className={`${compact ? 'w-0.5 h-0.5' : 'w-1 h-1'} rounded-full bg-success`} />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="glass rounded-xl overflow-hidden"
-        >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
-                <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                    <h2 className="text-lg font-semibold text-slate-100">Calendar</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={goToToday}
-                        className="text-xs px-2 py-1 rounded bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 transition-colors"
-                    >
-                        Today
-                    </button>
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
-                    >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
-                </div>
-            </div>
-
-            {/* Month Navigation */}
-            <div className="flex items-center justify-between px-4 py-2 bg-slate-800/30">
-                <button
-                    onClick={prevMonth}
-                    className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="text-sm font-medium text-slate-200">{monthName}</span>
-                <button
-                    onClick={nextMonth}
-                    className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                    <ChevronRight className="h-4 w-4" />
-                </button>
-            </div>
-
-            {/* Calendar Grid */}
-            <div className="p-3">
-                {/* Weekday headers */}
-                <div className="grid grid-cols-7 gap-1 mb-1">
-                    {weekDays.map(day => (
-                        <div key={day} className="text-center text-[10px] font-medium text-slate-500 py-1">
-                            {day}
-                        </div>
-                    ))}
-                </div>
-
-                {/* Days grid */}
-                <div className="grid grid-cols-7 gap-1">
-                    {calendarDays.map(({ day, isToday, events, key }) => (
-                        <div
-                            key={key}
-                            className={`
-                                aspect-square flex flex-col items-center justify-center rounded-md text-xs relative
-                                ${!day ? '' : 'hover:bg-slate-700/50 cursor-pointer transition-colors'}
-                                ${isToday ? 'bg-primary/20 text-primary font-bold ring-1 ring-primary/50' : 'text-slate-300'}
-                            `}
+        <>
+            {/* Compact Calendar Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="glass rounded-xl overflow-hidden"
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700/50">
+                    <div className="flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-semibold text-slate-100">{monthName}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button onClick={prevMonth} className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
+                            <ChevronLeft className="h-3 w-3" />
+                        </button>
+                        <button onClick={nextMonth} className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
+                            <ChevronRight className="h-3 w-3" />
+                        </button>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 ml-1"
+                            title="Expand Calendar"
                         >
-                            {day && (
-                                <>
-                                    <span>{day}</span>
-                                    {events.length > 0 && (
-                                        <div className="absolute bottom-0.5 flex gap-0.5">
-                                            {events.slice(0, 3).map((_, i) => (
-                                                <div key={i} className="w-1 h-1 rounded-full bg-success" />
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
+                            <Maximize2 className="h-3 w-3" />
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {/* Expanded Events List */}
+                <CalendarGrid compact />
+            </motion.div>
+
+            {/* Expanded Modal */}
             <AnimatePresence>
-                {isExpanded && (
+                {isModalOpen && (
                     <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="border-t border-slate-700/50 overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                        onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
                     >
-                        <div className="p-4">
-                            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-                                Upcoming Events
-                            </h3>
-                            {upcomingEvents.length > 0 ? (
-                                <div className="space-y-2">
-                                    {upcomingEvents.map((event, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-start gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50"
-                                        >
-                                            <div className="text-center min-w-[40px]">
-                                                <div className="text-lg font-bold text-slate-100">
-                                                    {event.date.getDate()}
-                                                </div>
-                                                <div className="text-[10px] text-slate-500 uppercase">
-                                                    {event.date.toLocaleString('default', { month: 'short' })}
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-slate-200 truncate">
-                                                    {event.vehicle.stockNumber} - {event.vehicle.year} {event.vehicle.make} {event.vehicle.model}
-                                                </p>
-                                                <p className="text-xs text-slate-500">
-                                                    {event.type} at {event.time}
-                                                </p>
-                                            </div>
-                                            <div className="w-2 h-2 rounded-full bg-success mt-1.5 shrink-0" />
-                                        </div>
-                                    ))}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-strong rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden"
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-primary" />
+                                    <h2 className="text-lg font-bold text-slate-100">Calendar</h2>
                                 </div>
-                            ) : (
-                                <p className="text-sm text-slate-500 text-center py-4">
-                                    No upcoming events
-                                </p>
-                            )}
-                        </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={goToToday} className="text-xs px-2 py-1 rounded bg-slate-700/50 text-slate-300 hover:bg-slate-600/50">
+                                        Today
+                                    </button>
+                                    <button onClick={() => setIsModalOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50">
+                                        <X className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Month Navigation */}
+                            <div className="flex items-center justify-between px-4 py-3 bg-slate-800/30">
+                                <button onClick={prevMonth} className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <span className="text-base font-semibold text-slate-200">{monthName}</span>
+                                <button onClick={nextMonth} className="p-1.5 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200">
+                                    <ChevronRight className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            {/* Large Calendar Grid */}
+                            <CalendarGrid />
+
+                            {/* Upcoming Events */}
+                            <div className="border-t border-slate-700/50 p-4 max-h-48 overflow-y-auto">
+                                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                    Upcoming Pickups ({upcomingEvents.length})
+                                </h3>
+                                {upcomingEvents.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {upcomingEvents.slice(0, 8).map((event, i) => (
+                                            <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                                                <div className="text-center min-w-[36px]">
+                                                    <div className="text-base font-bold text-slate-100">{event.date.getDate()}</div>
+                                                    <div className="text-[9px] text-slate-500 uppercase">
+                                                        {event.date.toLocaleString('default', { month: 'short' })}
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-slate-200 truncate">
+                                                        {event.vehicle.stockNumber} - {event.vehicle.year} {event.vehicle.make} {event.vehicle.model}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">Pickup at {event.time}</p>
+                                                </div>
+                                                <div className="w-2 h-2 rounded-full bg-success shrink-0" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-slate-500 text-center py-2">No upcoming pickups</p>
+                                )}
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </>
     );
 }
