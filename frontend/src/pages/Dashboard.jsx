@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
-import { Package, Truck, DollarSign, ArrowLeftRight, Clock, Calendar, Car, TrendingUp } from "lucide-react";
-import { CardSpotlight } from "../components/ui/card-spotlight";
+import { motion, AnimatePresence } from "motion/react";
+import {
+    Package, Truck, DollarSign, ArrowLeftRight, Clock, Calendar,
+    TrendingUp, ChevronRight, Sparkles, CalendarDays
+} from "lucide-react";
 import { StatusBadge } from "../components/ui/badge";
 import { inventory, soldVehicles, tradeIns } from "../services/api";
 import VehicleDetailModal from "../components/modals/VehicleDetailModal";
@@ -11,12 +13,7 @@ import DashboardCalendar from "../components/DashboardCalendar";
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const [stats, setStats] = useState({
-        inStock: 0,
-        inTransit: 0,
-        sold: 0,
-        tradeIns: 0,
-    });
+    const [stats, setStats] = useState({ inStock: 0, inTransit: 0, sold: 0, tradeIns: 0 });
     const [pendingPickups, setPendingPickups] = useState([]);
     const [scheduledPickups, setScheduledPickups] = useState([]);
     const [weeklySales, setWeeklySales] = useState([]);
@@ -25,32 +22,25 @@ export default function Dashboard() {
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [weeklySalesModalOpen, setWeeklySalesModalOpen] = useState(false);
 
-    useEffect(() => {
-        loadDashboardData();
-    }, []);
+    useEffect(() => { loadDashboardData(); }, []);
 
     const loadDashboardData = async () => {
         try {
             setIsLoading(true);
             const [inventoryData, soldData, tradeInsData] = await Promise.all([
-                inventory.getAll(),
-                soldVehicles.getAll(),
-                tradeIns.getAll(),
+                inventory.getAll(), soldVehicles.getAll(), tradeIns.getAll(),
             ]);
 
-            // Calculate stats - In Stock includes: in-stock, pdi, pending-pickup, pickup-scheduled
             const inStockStatuses = ['in-stock', 'pdi', 'pending-pickup', 'pickup-scheduled'];
             const inStock = inventoryData.filter((v) => inStockStatuses.includes(v.status)).length;
             const inTransit = inventoryData.filter((v) => v.status === "in-transit").length;
             const pending = inventoryData.filter((v) => v.status === "pending-pickup");
             const scheduled = inventoryData.filter((v) => v.status === "pickup-scheduled");
 
-            // Calculate weekly sales
             const today = new Date();
             const startOfWeek = new Date(today);
-            startOfWeek.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+            startOfWeek.setDate(today.getDate() - today.getDay());
             startOfWeek.setHours(0, 0, 0, 0);
-
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
@@ -60,16 +50,10 @@ export default function Dashboard() {
                 return saleDate >= startOfWeek && saleDate <= endOfWeek;
             }).slice(0, 10);
 
-            // Format date range
             const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            setWeeklySalesDateRange(`${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}, ${today.getFullYear()}`);
+            setWeeklySalesDateRange(`${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`);
 
-            setStats({
-                inStock,
-                inTransit,
-                sold: soldData.length,
-                tradeIns: tradeInsData.length,
-            });
+            setStats({ inStock, inTransit, sold: soldData.length, tradeIns: tradeInsData.length });
             setPendingPickups(pending);
             setScheduledPickups(scheduled);
             setWeeklySales(weekSales);
@@ -81,272 +65,220 @@ export default function Dashboard() {
     };
 
     const statCards = [
-        {
-            label: "In Stock",
-            value: stats.inStock,
-            icon: Package,
-            color: "#0a84ff",
-            href: "/inventory",
-        },
-        {
-            label: "In-Transit",
-            value: stats.inTransit,
-            icon: Truck,
-            color: "#ff9f0a",
-            href: "/in-transit",
-        },
-        {
-            label: "Sold",
-            value: stats.sold,
-            icon: DollarSign,
-            color: "#32d74b",
-            href: "/sold",
-        },
-        {
-            label: "Trade-Ins",
-            value: stats.tradeIns,
-            icon: ArrowLeftRight,
-            color: "#bf5af2",
-            href: "/tradeins",
-        },
+        { label: "In Stock", value: stats.inStock, icon: Package, gradient: "from-blue-500 to-blue-600", href: "/inventory" },
+        { label: "In-Transit", value: stats.inTransit, icon: Truck, gradient: "from-amber-500 to-orange-600", href: "/in-transit" },
+        { label: "Sold", value: stats.sold, icon: DollarSign, gradient: "from-emerald-500 to-green-600", href: "/sold" },
+        { label: "Trade-Ins", value: stats.tradeIns, icon: ArrowLeftRight, gradient: "from-purple-500 to-violet-600", href: "/tradeins" },
     ];
 
     return (
-        <div className="p-6 lg:p-8">
-            {/* Page Header */}
+        <div className="p-4 lg:p-6 min-h-screen">
+            {/* Header with gradient accent */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
             >
-                <h1 className="text-2xl font-bold text-slate-100 mb-1">Dashboard</h1>
-                <p className="text-slate-400 text-sm">Overview of your fleet inventory</p>
+                <div>
+                    <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                        <Sparkles className="h-6 w-6 text-primary" />
+                        Dashboard
+                    </h1>
+                    <p className="text-slate-400 text-sm mt-0.5">Fleet inventory overview</p>
+                </div>
+                <DashboardCalendar scheduledPickups={scheduledPickups} />
             </motion.div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Stats Cards - Animated gradient cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 {statCards.map((card, index) => (
                     <motion.div
                         key={card.label}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
+                        transition={{ delay: index * 0.08 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(card.href)}
+                        className="relative group cursor-pointer overflow-hidden rounded-xl"
                     >
-                        <CardSpotlight
-                            color={`${card.color}30`}
-                            onClick={() => navigate(card.href)}
-                        >
-                            <div className="flex items-start justify-between">
+                        {/* Gradient background */}
+                        <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-90 group-hover:opacity-100 transition-opacity`} />
+                        {/* Glass overlay */}
+                        <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]" />
+                        {/* Shine effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {/* Content */}
+                        <div className="relative p-4">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-slate-400 text-sm font-medium mb-1">
-                                        {card.label}
-                                    </p>
-                                    <p className="text-3xl font-bold text-slate-100">{card.value}</p>
+                                    <p className="text-white/80 text-xs font-medium uppercase tracking-wide">{card.label}</p>
+                                    <p className="text-3xl font-bold text-white mt-1">{card.value}</p>
                                 </div>
-                                <card.icon
-                                    className="h-6 w-6 opacity-50"
-                                    style={{ color: card.color }}
-                                />
+                                <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center">
+                                    <card.icon className="h-5 w-5 text-white" />
+                                </div>
                             </div>
-                        </CardSpotlight>
+                        </div>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Dashboard Sections Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Calendar - Small Card */}
-                <DashboardCalendar
-                    scheduledPickups={scheduledPickups}
-                />
+            {/* Main Content Grid - 3 column on large screens */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Pending Pickups */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="glass rounded-xl p-5"
+                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
                 >
-                    <div className="flex items-center gap-2 mb-3">
-                        <Clock className="h-5 w-5 text-warning" />
-                        <h2 className="text-lg font-semibold text-slate-100">Pending Pickup</h2>
-                        {pendingPickups.length > 0 && (
-                            <span className="text-xs text-slate-500">({pendingPickups.length})</span>
-                        )}
+                    <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                <Clock className="h-4 w-4 text-amber-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-white">Pending Pickup</h3>
+                                <p className="text-[10px] text-slate-500">{pendingPickups.length} vehicles</p>
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('/pending-pickup')} className="text-slate-400 hover:text-white transition-colors">
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
                     </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {pendingPickups.length > 0 ? (
-                            pendingPickups.map((vehicle) => (
-                                <VehicleCard
-                                    key={vehicle.id}
-                                    vehicle={vehicle}
-                                    onClick={() => setSelectedVehicle(vehicle)}
-                                />
-                            ))
-                        ) : (
-                            <p className="text-slate-500 text-sm py-4 text-center">
-                                No pending pickups
-                            </p>
-                        )}
+                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                        {pendingPickups.length > 0 ? pendingPickups.slice(0, 5).map((v) => (
+                            <VehicleRow key={v.id} vehicle={v} onClick={() => setSelectedVehicle(v)} accentColor="amber" />
+                        )) : <EmptyState text="No pending pickups" />}
                     </div>
                 </motion.div>
 
                 {/* Scheduled Pickups */}
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="glass rounded-xl p-5"
+                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
                 >
-                    <div className="flex items-center gap-2 mb-3">
-                        <Calendar className="h-5 w-5 text-success" />
-                        <h2 className="text-lg font-semibold text-slate-100">Scheduled Pickups</h2>
-                        {scheduledPickups.length > 0 && (
-                            <span className="text-xs text-slate-500">({scheduledPickups.length})</span>
-                        )}
+                    <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                <CalendarDays className="h-4 w-4 text-emerald-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-white">Scheduled</h3>
+                                <p className="text-[10px] text-slate-500">{scheduledPickups.length} upcoming</p>
+                            </div>
+                        </div>
+                        <button onClick={() => navigate('/pickup-scheduled')} className="text-slate-400 hover:text-white transition-colors">
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
                     </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {scheduledPickups.length > 0 ? (
-                            scheduledPickups.map((vehicle) => (
-                                <VehicleCard
-                                    key={vehicle.id}
-                                    vehicle={vehicle}
-                                    showSchedule
-                                    onClick={() => setSelectedVehicle(vehicle)}
-                                />
-                            ))
-                        ) : (
-                            <p className="text-slate-500 text-sm py-4 text-center">
-                                No scheduled pickups
-                            </p>
-                        )}
+                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                        {scheduledPickups.length > 0 ? scheduledPickups.slice(0, 5).map((v) => (
+                            <VehicleRow key={v.id} vehicle={v} showDate onClick={() => setSelectedVehicle(v)} accentColor="emerald" />
+                        )) : <EmptyState text="No scheduled pickups" />}
                     </div>
                 </motion.div>
 
-
-
-                {/* Weekly Sales - Full Width */}
+                {/* Weekly Sales */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="glass rounded-xl p-5 lg:col-span-2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
                 >
-                    <div className="flex items-center justify-between mb-3">
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-success" />
-                                <h2 className="text-lg font-semibold text-slate-100">
-                                    Weekly Sales
-                                </h2>
-                                {weeklySales.length > 0 && (
-                                    <span className="text-xs text-slate-500">({weeklySales.length})</span>
-                                )}
+                    <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                <TrendingUp className="h-4 w-4 text-green-400" />
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">{weeklySalesDateRange}</p>
+                            <div>
+                                <h3 className="text-sm font-semibold text-white">Weekly Sales</h3>
+                                <p className="text-[10px] text-slate-500">{weeklySalesDateRange}</p>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => setWeeklySalesModalOpen(true)}
-                            className="text-sm text-slate-400 hover:text-primary transition-colors"
-                        >
-                            View All →
+                        <button onClick={() => setWeeklySalesModalOpen(true)} className="text-slate-400 hover:text-white transition-colors">
+                            <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {weeklySales.length > 0 ? (
-                            weeklySales.map((vehicle) => (
-                                <SoldVehicleCard
-                                    key={vehicle.id}
-                                    vehicle={vehicle}
-                                    onClick={() => setSelectedVehicle(vehicle)}
-                                />
-                            ))
-                        ) : (
-                            <p className="text-slate-500 text-sm py-4 text-center">
-                                No sales this week
-                            </p>
-                        )}
+                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                        {weeklySales.length > 0 ? weeklySales.slice(0, 5).map((v) => (
+                            <SaleRow key={v.id} vehicle={v} onClick={() => setSelectedVehicle(v)} />
+                        )) : <EmptyState text="No sales this week" />}
                     </div>
                 </motion.div>
             </div>
 
-            {/* Vehicle Detail Modal */}
-            <VehicleDetailModal
-                vehicle={selectedVehicle}
-                isOpen={!!selectedVehicle}
-                onClose={() => setSelectedVehicle(null)}
-                onUpdate={loadDashboardData}
-            />
-
-            {/* Weekly Sales Modal */}
-            <WeeklySalesModal
-                isOpen={weeklySalesModalOpen}
-                onClose={() => setWeeklySalesModalOpen(false)}
-                sales={weeklySales}
-                dateRange={weeklySalesDateRange}
-            />
+            {/* Modals */}
+            <VehicleDetailModal vehicle={selectedVehicle} isOpen={!!selectedVehicle} onClose={() => setSelectedVehicle(null)} onUpdate={loadDashboardData} />
+            <WeeklySalesModal isOpen={weeklySalesModalOpen} onClose={() => setWeeklySalesModalOpen(false)} sales={weeklySales} dateRange={weeklySalesDateRange} />
         </div>
     );
 }
 
-function VehicleCard({ vehicle, showSchedule = false, compact = false, onClick }) {
-    // Get customer name if available
-    const customerName = vehicle.customer
-        ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim()
-        : '';
+// Compact vehicle row component
+function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }) {
+    const colors = {
+        amber: "border-amber-500/30 hover:bg-amber-500/10",
+        emerald: "border-emerald-500/30 hover:bg-emerald-500/10",
+        blue: "border-blue-500/30 hover:bg-blue-500/10"
+    };
 
     return (
-        <div
-            className={`p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-primary/30 hover:bg-slate-700/50 transition-colors cursor-pointer ${compact ? "" : ""}`}
+        <motion.div
+            whileHover={{ x: 2 }}
             onClick={onClick}
+            className={`p-2.5 rounded-xl bg-slate-900/50 border ${colors[accentColor]} cursor-pointer transition-colors`}
         >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-200 truncate">
-                        {vehicle.stockNumber} - {vehicle.year} {vehicle.make} {vehicle.model}
+                    <p className="text-xs font-medium text-white truncate">
+                        {vehicle.stockNumber} • {vehicle.year} {vehicle.make} {vehicle.model}
                     </p>
-                    {!compact && (
-                        <p className="text-xs text-slate-500">
-                            {customerName || vehicle.fleetCompany || "No Customer/Fleet"}
-                        </p>
-                    )}
-                    {showSchedule && vehicle.pickupDate && (
-                        <p className="text-xs text-success">
-                            📅 {new Date(vehicle.pickupDate).toLocaleDateString()} at {vehicle.pickupTime}
+                    {showDate && vehicle.pickupDate && (
+                        <p className="text-[10px] text-emerald-400 mt-0.5">
+                            📅 {new Date(vehicle.pickupDate).toLocaleDateString()} @ {vehicle.pickupTime || 'TBD'}
                         </p>
                     )}
                 </div>
                 <StatusBadge status={vehicle.status} />
             </div>
-        </div>
+        </motion.div>
     );
 }
 
-
-function SoldVehicleCard({ vehicle, onClick }) {
+// Sale row component
+function SaleRow({ vehicle, onClick }) {
     const customerName = vehicle.customer
-        ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim()
-        : 'Unknown Customer';
-
-    const saleDate = vehicle.customer?.saleDate
-        ? new Date(vehicle.customer.saleDate).toLocaleDateString()
-        : 'N/A';
+        ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || 'Customer'
+        : 'Unknown';
 
     return (
-        <div
-            className="p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-success/30 hover:bg-slate-700/50 transition-colors cursor-pointer"
+        <motion.div
+            whileHover={{ x: 2 }}
             onClick={onClick}
+            className="p-2.5 rounded-xl bg-slate-900/50 border border-green-500/30 hover:bg-green-500/10 cursor-pointer transition-colors"
         >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-200 truncate">
-                        {vehicle.stockNumber} - {vehicle.year} {vehicle.make} {vehicle.model}
+                    <p className="text-xs font-medium text-white truncate">
+                        {vehicle.stockNumber} • {vehicle.year} {vehicle.make}
                     </p>
-                    <p className="text-xs text-slate-500">
-                        {customerName} • Sold {saleDate}
-                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">{customerName}</p>
                 </div>
                 <StatusBadge status="sold" />
             </div>
+        </motion.div>
+    );
+}
+
+// Empty state component
+function EmptyState({ text }) {
+    return (
+        <div className="py-6 text-center">
+            <p className="text-xs text-slate-500">{text}</p>
         </div>
     );
 }
