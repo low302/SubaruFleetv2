@@ -63,6 +63,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                 fleetCompany: vehicle.fleetCompany || '',
                 operationCompany: vehicle.operationCompany || '',
                 notes: vehicle.notes || '',
+                inStockDate: vehicle.inStockDate ? vehicle.inStockDate.split('T')[0] : '',
             });
             setCustomerData({
                 name: vehicle.customer?.name || vehicle.customer?.firstName && vehicle.customer?.lastName
@@ -149,26 +150,37 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                 ...vehicle,
                 ...updateData,
             });
+
+            // Immediately update parent and close dropdown
             onUpdate?.();
         } catch (error) {
             console.error('Failed to update status:', error);
+            alert('Failed to update status: ' + error.message);
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleSchedulePickup = async () => {
+        if (!scheduleData.pickupDate || !scheduleData.pickupTime) {
+            alert('Please select both a pickup date and time.');
+            return;
+        }
+
         setIsLoading(true);
         try {
-            await inventoryApi.updateStatus(vehicle.id, {
+            await inventoryApi.update(vehicle.id, {
+                ...vehicle,
                 status: 'pickup-scheduled',
                 pickupDate: scheduleData.pickupDate,
                 pickupTime: scheduleData.pickupTime,
             });
             setShowScheduleModal(false);
+            setScheduleData({ pickupDate: '', pickupTime: '' });
             onUpdate?.();
         } catch (error) {
             console.error('Failed to schedule pickup:', error);
+            alert('Failed to schedule pickup: ' + error.message);
         } finally {
             setIsLoading(false);
         }
@@ -621,6 +633,12 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                                 label="Operation Company"
                                                 value={formData.operationCompany}
                                                 onChange={(e) => setFormData({ ...formData, operationCompany: e.target.value })}
+                                            />
+                                            <Input
+                                                type="date"
+                                                label="In-Stock Date"
+                                                value={formData.inStockDate}
+                                                onChange={(e) => setFormData({ ...formData, inStockDate: e.target.value })}
                                             />
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-300 mb-1.5">Notes</label>

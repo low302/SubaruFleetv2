@@ -54,11 +54,11 @@ export const DesktopSidebar = ({ className, children, ...props }) => {
     return (
         <motion.div
             className={cn(
-                "h-full px-4 py-4 hidden md:flex md:flex-col glass-strong w-[300px] shrink-0",
+                "h-full px-2 py-4 hidden md:flex md:flex-col glass-strong w-[300px] shrink-0",
                 className
             )}
             animate={{
-                width: animate ? (open ? "300px" : "70px") : "300px",
+                width: animate ? (open ? "300px" : "60px") : "300px",
             }}
             initial={{
                 width: "300px",
