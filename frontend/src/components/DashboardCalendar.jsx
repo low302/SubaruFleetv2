@@ -111,7 +111,7 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
                                 key={key}
                                 className={`w-4 h-4 flex items-center justify-center text-[8px] rounded-sm relative
                                     ${isToday ? 'bg-primary/30 text-primary font-bold' : 'text-slate-400'}
-                                    ${events.length > 0 ? 'text-success font-semibold' : ''}
+                                    ${events?.length > 0 ? 'text-success font-semibold' : ''}
                                 `}
                             >
                                 {day || ''}
