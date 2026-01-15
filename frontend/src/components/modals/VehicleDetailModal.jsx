@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Edit2, Save, Trash2, User, FileText, Printer, DollarSign, FolderOpen, Upload, Eye, Download, ChevronDown } from 'lucide-react';
+import { X, Edit2, Save, Trash2, User, FileText, Printer, DollarSign, FolderOpen, Upload, Eye, Download, ChevronDown, Check, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input, Select, FormRow } from '../ui/input';
 import { inventory as inventoryApi, documents as documentsApi } from '../../services/api';
@@ -518,8 +518,29 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="glass-strong rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+                        className="glass-strong rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden relative"
                     >
+                        {/* Toast Notification */}
+                        <AnimatePresence>
+                            {toast.show && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className={`absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 ${toast.type === 'success'
+                                        ? 'bg-green-500/90 text-white'
+                                        : 'bg-red-500/90 text-white'
+                                        }`}
+                                >
+                                    {toast.type === 'success' ? (
+                                        <Check className="h-4 w-4" />
+                                    ) : (
+                                        <AlertCircle className="h-4 w-4" />
+                                    )}
+                                    <span className="text-sm font-medium">{toast.message}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         {/* Header */}
                         <div className="flex items-center justify-between p-5 border-b border-slate-700/50">
                             <div>
