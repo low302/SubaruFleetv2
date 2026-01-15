@@ -6,12 +6,18 @@ import { Input, Select, FormRow } from '../ui/input';
 import { inventory as inventoryApi, documents as documentsApi } from '../../services/api';
 import { jsPDF } from 'jspdf';
 
+// Status options available in dropdown (excludes 'sold' which is only set via Mark as Sold)
 const STATUS_OPTIONS = [
     { value: 'in-stock', label: 'In Stock', color: 'bg-emerald-500' },
     { value: 'in-transit', label: 'In-Transit', color: 'bg-blue-500' },
     { value: 'pdi', label: 'PDI', color: 'bg-amber-500' },
     { value: 'pending-pickup', label: 'Pending Pickup', color: 'bg-purple-500' },
     { value: 'pickup-scheduled', label: 'Pickup Scheduled', color: 'bg-green-500' },
+];
+
+// All statuses including sold (for display purposes)
+const ALL_STATUSES = [
+    ...STATUS_OPTIONS,
     { value: 'sold', label: 'Sold', color: 'bg-green-600' },
 ];
 
@@ -35,6 +41,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [vehicleDocuments, setVehicleDocuments] = useState([]);
+    const [isEditingPayment, setIsEditingPayment] = useState(false);
 
     const fileInputRef = useRef(null);
     const statusDropdownRef = useRef(null);
@@ -297,7 +304,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     };
 
     const getCurrentStatusOption = () => {
-        return STATUS_OPTIONS.find(opt => opt.value === vehicle.status) || STATUS_OPTIONS[0];
+        return ALL_STATUSES.find(opt => opt.value === vehicle.status) || STATUS_OPTIONS[0];
     };
 
     // Generate Vehicle Pickup Acknowledgement PDF
@@ -509,45 +516,54 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                             <div className="flex items-center gap-2">
                                 {/* Status Dropdown */}
                                 <div className="relative" ref={statusDropdownRef}>
-                                    <button
-                                        onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                                        disabled={isLoading}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white transition-all ${getCurrentStatusOption().color} hover:opacity-90`}
-                                    >
-                                        {getCurrentStatusOption().label}
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {showStatusDropdown && (
-                                        <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-slate-800 border border-slate-700 shadow-xl z-50 overflow-hidden">
-                                            {STATUS_OPTIONS.map((option) => (
-                                                <button
-                                                    key={option.value}
-                                                    onClick={() => handleStatusChange(option.value)}
-                                                    className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${vehicle.status === option.value ? 'bg-slate-700/30' : ''
-                                                        }`}
-                                                >
-                                                    <span className={`w-2 h-2 rounded-full ${option.color}`} />
-                                                    <span className={vehicle.status === option.value ? 'text-white font-medium' : 'text-slate-300'}>
-                                                        {option.label}
-                                                    </span>
-                                                    {vehicle.status === option.value && (
-                                                        <span className="ml-auto text-primary">✓</span>
-                                                    )}
-                                                </button>
-                                            ))}
-                                            <div className="border-t border-slate-700">
-                                                <button
-                                                    onClick={() => {
-                                                        setShowStatusDropdown(false);
-                                                        setShowSoldModal(true);
-                                                    }}
-                                                    className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-green-600/20 transition-colors text-green-400"
-                                                >
-                                                    <span className="w-2 h-2 rounded-full bg-green-500" />
-                                                    Mark as Sold
-                                                </button>
-                                            </div>
-                                        </div>
+                                    {/* If vehicle is sold, show static badge without dropdown */}
+                                    {vehicle.status === 'sold' ? (
+                                        <span className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white ${getCurrentStatusOption().color}`}>
+                                            {getCurrentStatusOption().label}
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                                                disabled={isLoading}
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium text-white transition-all ${getCurrentStatusOption().color} hover:opacity-90`}
+                                            >
+                                                {getCurrentStatusOption().label}
+                                                <ChevronDown className={`h-4 w-4 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} />
+                                            </button>
+                                            {showStatusDropdown && (
+                                                <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-slate-800 border border-slate-700 shadow-xl z-50 overflow-hidden">
+                                                    {STATUS_OPTIONS.map((option) => (
+                                                        <button
+                                                            key={option.value}
+                                                            onClick={() => handleStatusChange(option.value)}
+                                                            className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-slate-700/50 transition-colors ${vehicle.status === option.value ? 'bg-slate-700/30' : ''
+                                                                }`}
+                                                        >
+                                                            <span className={`w-2 h-2 rounded-full ${option.color}`} />
+                                                            <span className={vehicle.status === option.value ? 'text-white font-medium' : 'text-slate-300'}>
+                                                                {option.label}
+                                                            </span>
+                                                            {vehicle.status === option.value && (
+                                                                <span className="ml-auto text-primary">✓</span>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-slate-700">
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowStatusDropdown(false);
+                                                                setShowSoldModal(true);
+                                                            }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-green-600/20 transition-colors text-green-400"
+                                                        >
+                                                            <span className="w-2 h-2 rounded-full bg-green-500" />
+                                                            Mark as Sold
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                                 <button
@@ -715,44 +731,14 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 
                             {activeTab === 'payment' && (
                                 <div className="space-y-4">
-                                    <FormRow>
-                                        <Input
-                                            type="number"
-                                            label="Sale Amount"
-                                            value={paymentData.saleAmount}
-                                            onChange={(e) => setPaymentData({ ...paymentData, saleAmount: e.target.value })}
-                                            placeholder="0.00"
-                                        />
-                                        <Input
-                                            type="date"
-                                            label="Sale Date"
-                                            value={paymentData.saleDate}
-                                            onChange={(e) => setPaymentData({ ...paymentData, saleDate: e.target.value })}
-                                        />
-                                    </FormRow>
-                                    <FormRow>
-                                        <Select
-                                            label="Payment Method"
-                                            value={paymentData.paymentMethod}
-                                            onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-                                            options={PAYMENT_METHODS}
-                                        />
-                                        <Input
-                                            label="Payment Reference"
-                                            value={paymentData.paymentReference}
-                                            onChange={(e) => setPaymentData({ ...paymentData, paymentReference: e.target.value })}
-                                            placeholder="Check #, ACH ref, etc."
-                                        />
-                                    </FormRow>
-
-                                    {/* Display current payment info if exists */}
-                                    {vehicle.customer?.saleAmount > 0 && (
-                                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 mt-4">
-                                            <p className="text-sm text-green-400 font-medium mb-2">Current Payment Info</p>
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                    {/* Display current payment info */}
+                                    {vehicle.customer?.saleAmount > 0 ? (
+                                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                                            <p className="text-sm text-green-400 font-medium mb-3">Payment Information</p>
+                                            <div className="grid grid-cols-2 gap-3 text-sm">
                                                 <div>
                                                     <span className="text-slate-500">Amount:</span>{' '}
-                                                    <span className="text-slate-200">${parseFloat(vehicle.customer.saleAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                    <span className="text-slate-200 font-medium">${parseFloat(vehicle.customer.saleAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                                                 </div>
                                                 {vehicle.customer.saleDate && (
                                                     <div>
@@ -774,14 +760,80 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                                 )}
                                             </div>
                                         </div>
+                                    ) : (
+                                        <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50 text-center">
+                                            <p className="text-sm text-slate-400">No payment information recorded</p>
+                                        </div>
                                     )}
 
-                                    <div className="pt-4">
-                                        <Button onClick={handleSavePayment} disabled={isLoading}>
-                                            <Save className="h-4 w-4" />
-                                            Save Payment Info
-                                        </Button>
-                                    </div>
+                                    {/* Edit Payment Form - only shown when editing */}
+                                    {isEditingPayment && (
+                                        <div className="p-4 rounded-lg bg-slate-800/30 border border-slate-700/50 space-y-4">
+                                            <p className="text-sm text-slate-300 font-medium">Update Payment Info</p>
+                                            <FormRow>
+                                                <Input
+                                                    type="number"
+                                                    label="Sale Amount"
+                                                    value={paymentData.saleAmount}
+                                                    onChange={(e) => setPaymentData({ ...paymentData, saleAmount: e.target.value })}
+                                                    placeholder="0.00"
+                                                />
+                                                <Input
+                                                    type="date"
+                                                    label="Sale Date"
+                                                    value={paymentData.saleDate}
+                                                    onChange={(e) => setPaymentData({ ...paymentData, saleDate: e.target.value })}
+                                                />
+                                            </FormRow>
+                                            <FormRow>
+                                                <Select
+                                                    label="Payment Method"
+                                                    value={paymentData.paymentMethod}
+                                                    onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
+                                                    options={PAYMENT_METHODS}
+                                                />
+                                                <Input
+                                                    label="Payment Reference"
+                                                    value={paymentData.paymentReference}
+                                                    onChange={(e) => setPaymentData({ ...paymentData, paymentReference: e.target.value })}
+                                                    placeholder="Check #, ACH ref, etc."
+                                                />
+                                            </FormRow>
+                                            <div className="flex gap-2 pt-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() => setIsEditingPayment(false)}
+                                                    className="flex-1"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        handleSavePayment();
+                                                        setIsEditingPayment(false);
+                                                    }}
+                                                    disabled={isLoading}
+                                                    className="flex-1"
+                                                >
+                                                    <Save className="h-4 w-4" />
+                                                    Save Payment
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Add/Edit Payment Button */}
+                                    {!isEditingPayment && (
+                                        <div className="pt-2">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => setIsEditingPayment(true)}
+                                            >
+                                                <DollarSign className="h-4 w-4" />
+                                                {vehicle.customer?.saleAmount > 0 ? 'Edit Payment' : 'Add Payment'}
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -992,10 +1044,20 @@ function InfoItem({ label, value, className = '' }) {
 
 function SoldModal({ vehicle, onClose, onSubmit, isLoading }) {
     const [hasTradeIn, setHasTradeIn] = useState(false);
+
+    // Get customer name from vehicle data (check multiple possible fields)
+    const getCustomerName = () => {
+        if (vehicle.customer?.name) return vehicle.customer.name;
+        if (vehicle.customer?.firstName || vehicle.customer?.lastName) {
+            return `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim();
+        }
+        return '';
+    };
+
     const [soldData, setSoldData] = useState({
         saleAmount: '',
         saleDate: new Date().toISOString().split('T')[0],
-        customerName: vehicle.customer?.name || '',
+        customerName: getCustomerName(),
         paymentMethod: '',
         paymentReference: '',
         notes: '',
@@ -1010,9 +1072,9 @@ function SoldModal({ vehicle, onClose, onSubmit, isLoading }) {
     });
 
     const handleSubmit = () => {
-        // Validate required fields
-        if (!soldData.saleAmount || !soldData.saleDate || !soldData.paymentMethod || !soldData.paymentReference || !soldData.customerName) {
-            alert('Please fill in all required fields');
+        // Validate required fields (customerName is now optional since it's auto-filled)
+        if (!soldData.saleAmount || !soldData.saleDate || !soldData.paymentMethod || !soldData.paymentReference) {
+            alert('Please fill in all required payment fields');
             return;
         }
 
@@ -1023,9 +1085,10 @@ function SoldModal({ vehicle, onClose, onSubmit, isLoading }) {
             }
         }
 
-        // Submit with trade-in data if applicable
+        // Submit with trade-in data if applicable - use auto-filled customer name
         onSubmit({
             ...soldData,
+            customerName: soldData.customerName || getCustomerName(),
             saleAmount: parseFloat(soldData.saleAmount),
             hasTradeIn,
             tradeIn: hasTradeIn ? tradeInData : null,
@@ -1060,19 +1123,49 @@ function SoldModal({ vehicle, onClose, onSubmit, isLoading }) {
             <div className="glass-strong rounded-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-slate-100 mb-4">Mark as Sold</h3>
 
-                {/* Vehicle Info */}
-                <div className="mb-4 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                    <p className="text-sm font-medium text-slate-200">{vehicle.stockNumber} - {vehicle.year} {vehicle.make} {vehicle.model}</p>
-                    <p className="text-xs text-slate-400">{vehicle.vin}</p>
+                {/* Vehicle & Customer Info (Auto-filled) */}
+                <div className="mb-4 p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span className="text-slate-500">Stock #:</span>{' '}
+                            <span className="text-slate-200 font-medium">{vehicle.stockNumber}</span>
+                        </div>
+                        <div>
+                            <span className="text-slate-500">Vehicle:</span>{' '}
+                            <span className="text-slate-200">{vehicle.year} {vehicle.make} {vehicle.model}</span>
+                        </div>
+                        <div className="col-span-2">
+                            <span className="text-slate-500">VIN:</span>{' '}
+                            <span className="text-slate-200 font-mono text-xs">{vehicle.vin}</span>
+                        </div>
+                        {getCustomerName() && (
+                            <div className="col-span-2">
+                                <span className="text-slate-500">Customer:</span>{' '}
+                                <span className="text-slate-200">{getCustomerName()}</span>
+                            </div>
+                        )}
+                        {vehicle.fleetCompany && (
+                            <div>
+                                <span className="text-slate-500">Fleet:</span>{' '}
+                                <span className="text-slate-200">{vehicle.fleetCompany}</span>
+                            </div>
+                        )}
+                        {vehicle.operationCompany && (
+                            <div>
+                                <span className="text-slate-500">Operation:</span>{' '}
+                                <span className="text-slate-200">{vehicle.operationCompany}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="space-y-4">
-                    {/* Customer Name */}
+                    {/* Customer Name (editable if needed, pre-filled from vehicle data) */}
                     <Input
-                        label="Customer Name *"
+                        label="Customer Name"
                         value={soldData.customerName}
                         onChange={(e) => setSoldData({ ...soldData, customerName: e.target.value })}
-                        placeholder="Enter customer name"
+                        placeholder="Enter or update customer name"
                     />
 
                     {/* Sale Amount and Date */}
