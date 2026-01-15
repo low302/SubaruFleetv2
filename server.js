@@ -450,27 +450,69 @@ app.post('/api/inventory/:id/mark-sold', isAuthenticated, async (req, res) => {
             notes: soldData.notes || existingCustomer.notes || '',
         };
 
-        // Create trade-in if provided
-        let tradeInId = null;
-        if (soldData.hasTradeIn && soldData.tradeIn) {
-            const tradeIn = soldData.tradeIn;
-            // Generate stock number for trade-in (T + last 6 of VIN)
-            const tradeInStockNumber = `T${tradeIn.vin.slice(-6)}`;
+        // Start a transaction to ensure atomicity
+        await new Promise((resolve, reject) => {
+            db.run('BEGIN TRANSACTION', (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
 
-            const tradeInResult = await new Promise((resolve, reject) => {
-                db.run(`INSERT INTO trade_ins (stockNumber, vin, year, make, model, trim, color, mileage, notes, dateAdded)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        try {
+            // Create trade-in if provided
+            let tradeInId = null;
+            if (soldData.hasTradeIn && soldData.tradeIn) {
+                const tradeIn = soldData.tradeIn;
+                // Generate stock number for trade-in (T + last 6 of VIN)
+                const tradeInStockNumber = `T${tradeIn.vin.slice(-6)}`;
+
+                const tradeInResult = await new Promise((resolve, reject) => {
+                    db.run(`INSERT INTO trade_ins (stockNumber, vin, year, make, model, trim, color, mileage, notes, dateAdded)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            tradeInStockNumber,
+                            tradeIn.vin,
+                            tradeIn.year,
+                            tradeIn.make,
+                            tradeIn.model,
+                            tradeIn.trim || '',
+                            tradeIn.color,
+                            tradeIn.mileage || null,
+                            `Trade-in from sale of ${vehicle.stockNumber}`,
+                            new Date().toISOString()
+                        ],
+                        function (err) {
+                            if (err) reject(err);
+                            else resolve({ id: this.lastID });
+                        }
+                    );
+                });
+                tradeInId = tradeInResult.id;
+                console.log('Created trade-in vehicle:', tradeInStockNumber, 'ID:', tradeInId);
+            }
+
+            // Insert into sold_vehicles
+            await new Promise((resolve, reject) => {
+                db.run(`INSERT INTO sold_vehicles 
+                        (id, stockNumber, vin, year, make, model, trim, color, fleetCompany, operationCompany, status, dateAdded, inStockDate, customer, documents, tradeInId)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
-                        tradeInStockNumber,
-                        tradeIn.vin,
-                        tradeIn.year,
-                        tradeIn.make,
-                        tradeIn.model,
-                        tradeIn.trim || '',
-                        tradeIn.color,
-                        tradeIn.mileage || null,
-                        `Trade-in from sale of ${vehicle.stockNumber}`,
-                        new Date().toISOString()
+                        vehicle.id,
+                        vehicle.stockNumber,
+                        vehicle.vin,
+                        vehicle.year,
+                        vehicle.make,
+                        vehicle.model,
+                        vehicle.trim,
+                        vehicle.color,
+                        vehicle.fleetCompany || '',
+                        vehicle.operationCompany || '',
+                        'sold',
+                        vehicle.dateAdded,
+                        vehicle.inStockDate,
+                        JSON.stringify(customerData),
+                        vehicle.documents || '[]',
+                        tradeInId
                     ],
                     function (err) {
                         if (err) reject(err);
@@ -478,54 +520,38 @@ app.post('/api/inventory/:id/mark-sold', isAuthenticated, async (req, res) => {
                     }
                 );
             });
-            tradeInId = tradeInResult.id;
-            console.log('Created trade-in vehicle:', tradeInStockNumber, 'ID:', tradeInId);
-        }
 
-        // Insert into sold_vehicles
-        await new Promise((resolve, reject) => {
-            db.run(`INSERT INTO sold_vehicles 
-                    (id, stockNumber, vin, year, make, model, trim, color, fleetCompany, operationCompany, status, dateAdded, inStockDate, customer, documents, tradeInId)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    vehicle.id,
-                    vehicle.stockNumber,
-                    vehicle.vin,
-                    vehicle.year,
-                    vehicle.make,
-                    vehicle.model,
-                    vehicle.trim,
-                    vehicle.color,
-                    vehicle.fleetCompany || '',
-                    vehicle.operationCompany || '',
-                    'sold',
-                    vehicle.dateAdded,
-                    vehicle.inStockDate,
-                    JSON.stringify(customerData),
-                    vehicle.documents || '[]',
-                    tradeInId
-                ],
-                function (err) {
+            // Delete from inventory
+            await new Promise((resolve, reject) => {
+                db.run('DELETE FROM inventory WHERE id = ?', [vehicleId], function (err) {
                     if (err) reject(err);
-                    else resolve({ id: this.lastID });
-                }
-            );
-        });
-
-        // Delete from inventory
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM inventory WHERE id = ?', [vehicleId], function (err) {
-                if (err) reject(err);
-                else resolve({ changes: this.changes });
+                    else resolve({ changes: this.changes });
+                });
             });
-        });
 
-        console.log('Vehicle marked as sold:', vehicle.stockNumber);
-        res.json({
-            success: true,
-            message: 'Vehicle marked as sold',
-            tradeInId: tradeInId
-        });
+            // Commit the transaction
+            await new Promise((resolve, reject) => {
+                db.run('COMMIT', (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+
+            console.log('Vehicle marked as sold:', vehicle.stockNumber);
+            res.json({
+                success: true,
+                message: 'Vehicle marked as sold',
+                tradeInId: tradeInId
+            });
+
+        } catch (transactionError) {
+            // Rollback the transaction if any operation fails
+            console.error('Transaction error, rolling back:', transactionError);
+            await new Promise((resolve) => {
+                db.run('ROLLBACK', () => resolve());
+            });
+            throw transactionError;
+        }
 
     } catch (error) {
         console.error('Error marking vehicle as sold:', error);

@@ -220,6 +220,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             onUpdate?.();
         } catch (error) {
             console.error('Failed to mark as sold:', error);
+            alert('Failed to mark vehicle as sold: ' + (error.message || 'Unknown error'));
         } finally {
             setIsLoading(false);
         }

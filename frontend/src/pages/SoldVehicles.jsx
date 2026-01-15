@@ -33,6 +33,9 @@ export default function SoldVehicles() {
     // Get customer name from the customer object
     const getCustomerName = (vehicle) => {
         if (!vehicle.customer) return "-";
+        // Check for 'name' field first (used by mark-sold)
+        if (vehicle.customer.name) return vehicle.customer.name;
+        // Fall back to firstName/lastName combination
         const firstName = vehicle.customer.firstName || '';
         const lastName = vehicle.customer.lastName || '';
         const name = `${firstName} ${lastName}`.trim();
@@ -77,6 +80,7 @@ export default function SoldVehicles() {
                 (v) =>
                     v.stockNumber?.toLowerCase().includes(searchLower) ||
                     v.vin?.toLowerCase().includes(searchLower) ||
+                    (v.customer?.name || '').toLowerCase().includes(searchLower) ||
                     (v.customer?.firstName || '').toLowerCase().includes(searchLower) ||
                     (v.customer?.lastName || '').toLowerCase().includes(searchLower) ||
                     v.fleetCompany?.toLowerCase().includes(searchLower) ||
