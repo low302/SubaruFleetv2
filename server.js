@@ -424,6 +424,12 @@ app.put('/api/inventory/:id/customer', isAuthenticated, (req, res) => {
             existingCustomer = {};
         }
 
+        // If 'name' is being set, clear firstName/lastName to avoid conflicts
+        if (customerData.name !== undefined) {
+            delete existingCustomer.firstName;
+            delete existingCustomer.lastName;
+        }
+
         const updatedCustomer = { ...existingCustomer, ...customerData };
 
         db.run(

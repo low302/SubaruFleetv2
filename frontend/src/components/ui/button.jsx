@@ -61,13 +61,13 @@ const MovingBorderGradient = ({ duration }) => {
 };
 
 export const Button = ({ children, className, variant = "primary", size = "md", ...props }) => {
-    const baseStyles = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-300 rounded-lg relative overflow-hidden";
+    const baseStyles = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-300 rounded-lg relative overflow-hidden active:scale-95";
 
     const variants = {
-        primary: "bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/40",
-        secondary: "glass text-slate-200 hover:bg-slate-700/70 hover:-translate-y-0.5",
-        danger: "bg-gradient-to-r from-danger to-red-700 text-white shadow-md shadow-danger/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-danger/40",
-        ghost: "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50",
+        primary: "bg-gradient-to-r from-primary to-primary-600 text-white shadow-md shadow-primary/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/40 active:shadow-sm",
+        secondary: "glass text-slate-200 hover:bg-slate-700/70 hover:-translate-y-0.5 active:bg-slate-700/90",
+        danger: "bg-gradient-to-r from-danger to-red-700 text-white shadow-md shadow-danger/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-danger/40 active:shadow-sm",
+        ghost: "text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 active:bg-slate-700/70",
     };
 
     const sizes = {
