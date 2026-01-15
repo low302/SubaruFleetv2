@@ -26,18 +26,19 @@ const OL875_POSITIONS = Array.from({ length: 30 }, (_, index) => {
     return { row, col, top, left: `${leftVal.toFixed(5)}in` };
 });
 
-export default function LabelPrintModal({ vehicle, isOpen, onClose }) {
-    const [labelType, setLabelType] = useState(null);
+export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly = false }) {
+    const [labelType, setLabelType] = useState(keyTagOnly ? 'key' : null);
     const [selectedPosition, setSelectedPosition] = useState(0);
     const [selectedKeyPositions, setSelectedKeyPositions] = useState([]);
 
-    if (!isOpen || !vehicle) return null;
-
+    // Reset label type when modal opens based on keyTagOnly prop
     const handleReset = () => {
-        setLabelType(null);
+        setLabelType(keyTagOnly ? 'key' : null);
         setSelectedPosition(0);
         setSelectedKeyPositions([]);
     };
+
+    if (!isOpen || !vehicle) return null;
 
     const handleClose = () => {
         handleReset();
@@ -381,9 +382,15 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose }) {
                         <div className="flex justify-between gap-2 p-5 border-t border-slate-700/50">
                             {labelType ? (
                                 <>
-                                    <Button variant="secondary" onClick={handleReset}>
-                                        Back
-                                    </Button>
+                                    {!keyTagOnly ? (
+                                        <Button variant="secondary" onClick={handleReset}>
+                                            Back
+                                        </Button>
+                                    ) : (
+                                        <Button variant="secondary" onClick={handleClose}>
+                                            Cancel
+                                        </Button>
+                                    )}
                                     <Button
                                         onClick={handlePrint}
                                         disabled={labelType === 'key' && selectedKeyPositions.length === 0}

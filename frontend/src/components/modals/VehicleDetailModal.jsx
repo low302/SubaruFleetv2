@@ -42,6 +42,8 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     const [isUploading, setIsUploading] = useState(false);
     const [vehicleDocuments, setVehicleDocuments] = useState([]);
     const [isEditingPayment, setIsEditingPayment] = useState(false);
+    const [isRescheduling, setIsRescheduling] = useState(false);
+    const [rescheduleData, setRescheduleData] = useState({ pickupDate: '', pickupTime: '' });
 
     const fileInputRef = useRef(null);
     const statusDropdownRef = useRef(null);
@@ -915,10 +917,99 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                             {/* Pickup Scheduled Info (show in details if applicable) */}
                             {vehicle.status === 'pickup-scheduled' && vehicle.pickupDate && activeTab === 'details' && (
                                 <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 mt-4">
-                                    <p className="text-sm text-green-400 font-medium">Scheduled Pickup</p>
-                                    <p className="text-sm text-slate-300 mt-1">
-                                        {new Date(vehicle.pickupDate).toLocaleDateString()} at {vehicle.pickupTime}
-                                    </p>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm text-green-400 font-medium">Scheduled Pickup</p>
+                                        {!isRescheduling && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setRescheduleData({
+                                                        pickupDate: vehicle.pickupDate || '',
+                                                        pickupTime: vehicle.pickupTime || ''
+                                                    });
+                                                    setIsRescheduling(true);
+                                                }}
+                                            >
+                                                Re-Schedule
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {isRescheduling ? (
+                                        <div className="space-y-3">
+                                            <FormRow>
+                                                <Input
+                                                    type="date"
+                                                    label="New Pickup Date"
+                                                    value={rescheduleData.pickupDate}
+                                                    onChange={(e) => setRescheduleData({ ...rescheduleData, pickupDate: e.target.value })}
+                                                />
+                                                <Select
+                                                    label="New Pickup Time"
+                                                    value={rescheduleData.pickupTime}
+                                                    onChange={(e) => setRescheduleData({ ...rescheduleData, pickupTime: e.target.value })}
+                                                >
+                                                    <option value="">Select Time</option>
+                                                    <option value="08:00">8:00 AM</option>
+                                                    <option value="08:30">8:30 AM</option>
+                                                    <option value="09:00">9:00 AM</option>
+                                                    <option value="09:30">9:30 AM</option>
+                                                    <option value="10:00">10:00 AM</option>
+                                                    <option value="10:30">10:30 AM</option>
+                                                    <option value="11:00">11:00 AM</option>
+                                                    <option value="11:30">11:30 AM</option>
+                                                    <option value="12:00">12:00 PM</option>
+                                                    <option value="12:30">12:30 PM</option>
+                                                    <option value="13:00">1:00 PM</option>
+                                                    <option value="13:30">1:30 PM</option>
+                                                    <option value="14:00">2:00 PM</option>
+                                                    <option value="14:30">2:30 PM</option>
+                                                    <option value="15:00">3:00 PM</option>
+                                                    <option value="15:30">3:30 PM</option>
+                                                    <option value="16:00">4:00 PM</option>
+                                                    <option value="16:30">4:30 PM</option>
+                                                    <option value="17:00">5:00 PM</option>
+                                                </Select>
+                                            </FormRow>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => setIsRescheduling(false)}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    disabled={isLoading || !rescheduleData.pickupDate || !rescheduleData.pickupTime}
+                                                    onClick={async () => {
+                                                        setIsLoading(true);
+                                                        try {
+                                                            await inventoryApi.update(vehicle.id, {
+                                                                ...vehicle,
+                                                                pickupDate: rescheduleData.pickupDate,
+                                                                pickupTime: rescheduleData.pickupTime,
+                                                            });
+                                                            setIsRescheduling(false);
+                                                            onUpdate?.();
+                                                        } catch (error) {
+                                                            console.error('Failed to reschedule:', error);
+                                                            alert('Failed to reschedule pickup: ' + error.message);
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
+                                                    }}
+                                                >
+                                                    {isLoading ? 'Saving...' : 'Save New Date'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-300">
+                                            {new Date(vehicle.pickupDate).toLocaleDateString()} at {vehicle.pickupTime}
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>

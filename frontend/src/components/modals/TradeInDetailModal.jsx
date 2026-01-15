@@ -265,6 +265,7 @@ export default function TradeInDetailModal({ tradeIn, isOpen, onClose, onUpdate 
                             vehicle={tradeIn}
                             isOpen={showLabelModal}
                             onClose={() => setShowLabelModal(false)}
+                            keyTagOnly={true}
                         />
                     </motion.div>
                 </motion.div>

@@ -463,8 +463,8 @@ app.post('/api/inventory/:id/mark-sold', isAuthenticated, async (req, res) => {
             let tradeInId = null;
             if (soldData.hasTradeIn && soldData.tradeIn) {
                 const tradeIn = soldData.tradeIn;
-                // Generate stock number for trade-in (T + last 6 of VIN)
-                const tradeInStockNumber = `T${tradeIn.vin.slice(-6)}`;
+                // Generate stock number for trade-in (original vehicle stock number + '-A')
+                const tradeInStockNumber = `${vehicle.stockNumber}-A`;
 
                 const tradeInResult = await new Promise((resolve, reject) => {
                     db.run(`INSERT INTO trade_ins (stockNumber, vin, year, make, model, trim, color, mileage, notes, dateAdded)

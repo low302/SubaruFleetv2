@@ -13,7 +13,7 @@ import DashboardCalendar from "../components/DashboardCalendar";
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ inStock: 0, inTransit: 0, sold: 0, tradeIns: 0 });
+    const [stats, setStats] = useState({ inStock: 0, inTransit: 0, soldMTD: 0, soldYTD: 0, tradeIns: 0 });
     const [pendingPickups, setPendingPickups] = useState([]);
     const [scheduledPickups, setScheduledPickups] = useState([]);
     const [weeklySales, setWeeklySales] = useState([]);
@@ -45,15 +45,31 @@ export default function Dashboard() {
             endOfWeek.setDate(startOfWeek.getDate() + 6);
             endOfWeek.setHours(23, 59, 59, 999);
 
+            // Calculate MTD (Month-to-Date) and YTD (Year-to-Date) sold counts
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+            const getSaleDate = (v) => v.customer?.saleDate ? new Date(v.customer.saleDate) : new Date(v.created_at);
+
+            const soldMTD = soldData.filter((v) => {
+                const saleDate = getSaleDate(v);
+                return saleDate >= startOfMonth && saleDate <= today;
+            }).length;
+
+            const soldYTD = soldData.filter((v) => {
+                const saleDate = getSaleDate(v);
+                return saleDate >= startOfYear && saleDate <= today;
+            }).length;
+
             const weekSales = soldData.filter((v) => {
-                const saleDate = v.customer?.saleDate ? new Date(v.customer.saleDate) : new Date(v.created_at);
+                const saleDate = getSaleDate(v);
                 return saleDate >= startOfWeek && saleDate <= endOfWeek;
             }).slice(0, 10);
 
             const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             setWeeklySalesDateRange(`${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`);
 
-            setStats({ inStock, inTransit, sold: soldData.length, tradeIns: tradeInsData.length });
+            setStats({ inStock, inTransit, soldMTD, soldYTD, tradeIns: tradeInsData.length });
             setPendingPickups(pending);
             setScheduledPickups(scheduled);
             setWeeklySales(weekSales);
@@ -67,7 +83,8 @@ export default function Dashboard() {
     const statCards = [
         { label: "In Stock", value: stats.inStock, icon: Package, gradient: "from-blue-500 to-blue-600", href: "/inventory" },
         { label: "In-Transit", value: stats.inTransit, icon: Truck, gradient: "from-amber-500 to-orange-600", href: "/in-transit" },
-        { label: "Sold", value: stats.sold, icon: DollarSign, gradient: "from-emerald-500 to-green-600", href: "/sold" },
+        { label: "MTD Sold", value: stats.soldMTD, icon: DollarSign, gradient: "from-emerald-500 to-green-600", href: "/sold" },
+        { label: "YTD Sold", value: stats.soldYTD, icon: TrendingUp, gradient: "from-teal-500 to-cyan-600", href: "/sold" },
         { label: "Trade-Ins", value: stats.tradeIns, icon: ArrowLeftRight, gradient: "from-purple-500 to-violet-600", href: "/tradeins" },
     ];
 
@@ -90,7 +107,7 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Stats Cards - Animated gradient cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
                 {statCards.map((card, index) => (
                     <motion.div
                         key={card.label}
