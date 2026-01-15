@@ -44,6 +44,17 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     const [isEditingPayment, setIsEditingPayment] = useState(false);
     const [isRescheduling, setIsRescheduling] = useState(false);
     const [rescheduleData, setRescheduleData] = useState({ pickupDate: '', pickupTime: '' });
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    // Auto-dismiss toast after 3 seconds
+    useEffect(() => {
+        if (toast.show) {
+            const timer = setTimeout(() => {
+                setToast({ ...toast, show: false });
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast.show]);
 
     const fileInputRef = useRef(null);
     const statusDropdownRef = useRef(null);
@@ -199,9 +210,11 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         setIsLoading(true);
         try {
             await inventoryApi.updateCustomer(vehicle.id, customerData);
+            setToast({ show: true, message: 'Customer info saved successfully!', type: 'success' });
             onUpdate?.();
         } catch (error) {
             console.error('Failed to save customer:', error);
+            setToast({ show: true, message: 'Failed to save customer info', type: 'error' });
         } finally {
             setIsLoading(false);
         }

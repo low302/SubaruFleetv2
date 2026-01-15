@@ -401,6 +401,46 @@ app.put('/api/inventory/:id', isAuthenticated, (req, res) => {
     });
 });
 
+// Update customer info for a vehicle
+app.put('/api/inventory/:id/customer', isAuthenticated, (req, res) => {
+    const { id } = req.params;
+    const customerData = req.body;
+
+    // First get the current vehicle to merge customer data
+    db.get('SELECT customer FROM inventory WHERE id = ?', [id], (err, row) => {
+        if (err) {
+            console.error('Error fetching vehicle for customer update:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        if (!row) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+        }
+
+        // Merge existing customer data with new data
+        let existingCustomer = {};
+        try {
+            existingCustomer = row.customer ? JSON.parse(row.customer) : {};
+        } catch (e) {
+            existingCustomer = {};
+        }
+
+        const updatedCustomer = { ...existingCustomer, ...customerData };
+
+        db.run(
+            'UPDATE inventory SET customer = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [JSON.stringify(updatedCustomer), id],
+            function (err) {
+                if (err) {
+                    console.error('Error updating customer info:', err);
+                    return res.status(500).json({ error: err.message });
+                }
+                console.log('Customer info updated for vehicle:', id);
+                res.json({ success: true, customer: updatedCustomer });
+            }
+        );
+    });
+});
+
 // Delete vehicle
 app.delete('/api/inventory/:id', isAuthenticated, (req, res) => {
     db.run('DELETE FROM inventory WHERE id = ?', [req.params.id], function (err) {

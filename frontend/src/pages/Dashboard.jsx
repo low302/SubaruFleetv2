@@ -141,8 +141,8 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            {/* Main Content Grid - 2 columns on medium, full width cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {/* Main Content Grid - Full width stacked cards */}
+            <div className="grid grid-cols-1 gap-5">
                 {/* Pending Pickups */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -250,68 +250,98 @@ function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }
         <motion.div
             whileHover={{ x: 2 }}
             onClick={onClick}
-            className={`p-3 rounded-xl bg-slate-900/50 border ${colors[accentColor]} cursor-pointer transition-colors`}
+            className={`px-4 py-3 rounded-xl bg-slate-900/50 border ${colors[accentColor]} cursor-pointer transition-colors`}
         >
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white">
-                        <span className="text-primary">{vehicle.stockNumber}</span>
-                        <span className="text-slate-400 mx-1">•</span>
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                    </p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                        {customerName && (
-                            <p className="text-xs text-slate-400">
-                                👤 {customerName}
-                            </p>
-                        )}
-                        {vehicle.fleetCompany && (
-                            <p className="text-xs text-slate-500">
-                                🏢 {vehicle.fleetCompany}
+            <div className="grid grid-cols-12 gap-4 items-center">
+                {/* Stock # */}
+                <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm font-bold text-primary">{vehicle.stockNumber}</p>
+                </div>
+                {/* Vehicle */}
+                <div className="col-span-4 sm:col-span-3">
+                    <p className="text-sm font-medium text-white truncate">{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                    {vehicle.color && <p className="text-xs text-slate-500">{vehicle.color}</p>}
+                </div>
+                {/* Customer */}
+                <div className="col-span-3 sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{customerName || '-'}</p>
+                </div>
+                {/* Fleet */}
+                <div className="hidden sm:block sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{vehicle.fleetCompany || '-'}</p>
+                </div>
+                {/* Operation Co */}
+                <div className="hidden sm:block sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{vehicle.operationCompany || '-'}</p>
+                </div>
+                {/* Pickup Date (or spacer) */}
+                {showDate ? (
+                    <div className="col-span-2 sm:col-span-1">
+                        {vehicle.pickupDate && (
+                            <p className="text-xs text-emerald-400">
+                                {new Date(vehicle.pickupDate + 'T00:00:00').toLocaleDateString()}
+                                <span className="text-emerald-500 block text-[10px]">{vehicle.pickupTime || ''}</span>
                             </p>
                         )}
                     </div>
-                    {showDate && vehicle.pickupDate && (
-                        <p className="text-xs text-emerald-400 mt-1">
-                            📅 {new Date(vehicle.pickupDate + 'T00:00:00').toLocaleDateString()} @ {vehicle.pickupTime || 'TBD'}
-                        </p>
-                    )}
+                ) : (
+                    <div className="hidden sm:block sm:col-span-1"></div>
+                )}
+                {/* Status */}
+                <div className="col-span-1 flex justify-end">
+                    <StatusBadge status={vehicle.status} />
                 </div>
-                <StatusBadge status={vehicle.status} />
             </div>
         </motion.div>
     );
 }
 
-// Sale row component with more info
+// Sale row component with horizontal layout for full width
 function SaleRow({ vehicle, onClick }) {
     const customerName = vehicle.customer?.name
         || (vehicle.customer?.firstName ? `${vehicle.customer.firstName} ${vehicle.customer.lastName || ''}`.trim() : null)
-        || 'Unknown';
+        || '-';
 
     const saleDate = vehicle.customer?.saleDate
         ? new Date(vehicle.customer.saleDate + 'T00:00:00').toLocaleDateString()
-        : null;
+        : '-';
 
     return (
         <motion.div
             whileHover={{ x: 2 }}
             onClick={onClick}
-            className="p-3 rounded-xl bg-slate-900/50 border border-green-500/30 hover:bg-green-500/10 cursor-pointer transition-colors"
+            className="px-4 py-3 rounded-xl bg-slate-900/50 border border-green-500/30 hover:bg-green-500/10 cursor-pointer transition-colors"
         >
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white">
-                        <span className="text-primary">{vehicle.stockNumber}</span>
-                        <span className="text-slate-400 mx-1">•</span>
-                        {vehicle.year} {vehicle.make} {vehicle.model}
-                    </p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
-                        <p className="text-xs text-slate-400">👤 {customerName}</p>
-                        {saleDate && <p className="text-xs text-slate-500">📅 {saleDate}</p>}
-                    </div>
+            <div className="grid grid-cols-12 gap-4 items-center">
+                {/* Stock # */}
+                <div className="col-span-2 sm:col-span-1">
+                    <p className="text-sm font-bold text-primary">{vehicle.stockNumber}</p>
                 </div>
-                <StatusBadge status="sold" />
+                {/* Vehicle */}
+                <div className="col-span-4 sm:col-span-3">
+                    <p className="text-sm font-medium text-white truncate">{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                    {vehicle.color && <p className="text-xs text-slate-500">{vehicle.color}</p>}
+                </div>
+                {/* Customer */}
+                <div className="col-span-3 sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{customerName}</p>
+                </div>
+                {/* Fleet */}
+                <div className="hidden sm:block sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{vehicle.fleetCompany || '-'}</p>
+                </div>
+                {/* Operation Co */}
+                <div className="hidden sm:block sm:col-span-2">
+                    <p className="text-xs text-slate-400 truncate">{vehicle.operationCompany || '-'}</p>
+                </div>
+                {/* Sale Date */}
+                <div className="col-span-2 sm:col-span-1">
+                    <p className="text-xs text-green-400">{saleDate}</p>
+                </div>
+                {/* Status */}
+                <div className="col-span-1 flex justify-end">
+                    <StatusBadge status="sold" />
+                </div>
             </div>
         </motion.div>
     );
