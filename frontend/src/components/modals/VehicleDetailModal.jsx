@@ -86,9 +86,10 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                 inStockDate: vehicle.inStockDate ? vehicle.inStockDate.split('T')[0] : '',
             });
             setCustomerData({
-                name: vehicle.customer?.name || vehicle.customer?.firstName && vehicle.customer?.lastName
-                    ? `${vehicle.customer.firstName} ${vehicle.customer.lastName}`.trim()
-                    : '',
+                name: vehicle.customer?.name
+                    || (vehicle.customer?.firstName || vehicle.customer?.lastName
+                        ? `${vehicle.customer?.firstName || ''} ${vehicle.customer?.lastName || ''}`.trim()
+                        : ''),
                 phone: vehicle.customer?.phone || '',
                 email: vehicle.customer?.email || '',
             });
@@ -443,7 +444,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             yPos = drawFullWidthRow('Operation Co.:', vehicle.operationCompany || '', yPos);
 
             const customerName = vehicle.customer
-                ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || vehicle.customer.name || ''
+                ? vehicle.customer.name || `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || ''
                 : '';
             yPos = drawFullWidthRow('Customer:', customerName, yPos);
             yPos = drawFullWidthRow('Phone:', vehicle.customer?.phone || '', yPos);
