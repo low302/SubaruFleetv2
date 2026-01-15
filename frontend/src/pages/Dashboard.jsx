@@ -141,14 +141,14 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            {/* Main Content Grid - 3 column on large screens */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Main Content Grid - 2 columns on medium, full width cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {/* Pending Pickups */}
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[320px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[320px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -204,7 +204,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[320px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export default function Dashboard() {
     );
 }
 
-// Compact vehicle row component
+// Compact vehicle row component with more info
 function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }) {
     const colors = {
         amber: "border-amber-500/30 hover:bg-amber-500/10",
@@ -243,19 +243,36 @@ function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }
         blue: "border-blue-500/30 hover:bg-blue-500/10"
     };
 
+    const customerName = vehicle.customer?.name
+        || (vehicle.customer?.firstName ? `${vehicle.customer.firstName} ${vehicle.customer.lastName || ''}`.trim() : null);
+
     return (
         <motion.div
             whileHover={{ x: 2 }}
             onClick={onClick}
-            className={`p-2.5 rounded-xl bg-slate-900/50 border ${colors[accentColor]} cursor-pointer transition-colors`}
+            className={`p-3 rounded-xl bg-slate-900/50 border ${colors[accentColor]} cursor-pointer transition-colors`}
         >
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-white truncate">
-                        {vehicle.stockNumber} • {vehicle.year} {vehicle.make} {vehicle.model}
+                    <p className="text-sm font-medium text-white">
+                        <span className="text-primary">{vehicle.stockNumber}</span>
+                        <span className="text-slate-400 mx-1">•</span>
+                        {vehicle.year} {vehicle.make} {vehicle.model}
                     </p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        {customerName && (
+                            <p className="text-xs text-slate-400">
+                                👤 {customerName}
+                            </p>
+                        )}
+                        {vehicle.fleetCompany && (
+                            <p className="text-xs text-slate-500">
+                                🏢 {vehicle.fleetCompany}
+                            </p>
+                        )}
+                    </div>
                     {showDate && vehicle.pickupDate && (
-                        <p className="text-[10px] text-emerald-400 mt-0.5">
+                        <p className="text-xs text-emerald-400 mt-1">
                             📅 {new Date(vehicle.pickupDate + 'T00:00:00').toLocaleDateString()} @ {vehicle.pickupTime || 'TBD'}
                         </p>
                     )}
@@ -266,24 +283,33 @@ function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }
     );
 }
 
-// Sale row component
+// Sale row component with more info
 function SaleRow({ vehicle, onClick }) {
-    const customerName = vehicle.customer
-        ? `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || 'Customer'
-        : 'Unknown';
+    const customerName = vehicle.customer?.name
+        || (vehicle.customer?.firstName ? `${vehicle.customer.firstName} ${vehicle.customer.lastName || ''}`.trim() : null)
+        || 'Unknown';
+
+    const saleDate = vehicle.customer?.saleDate
+        ? new Date(vehicle.customer.saleDate + 'T00:00:00').toLocaleDateString()
+        : null;
 
     return (
         <motion.div
             whileHover={{ x: 2 }}
             onClick={onClick}
-            className="p-2.5 rounded-xl bg-slate-900/50 border border-green-500/30 hover:bg-green-500/10 cursor-pointer transition-colors"
+            className="p-3 rounded-xl bg-slate-900/50 border border-green-500/30 hover:bg-green-500/10 cursor-pointer transition-colors"
         >
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-white truncate">
-                        {vehicle.stockNumber} • {vehicle.year} {vehicle.make}
+                    <p className="text-sm font-medium text-white">
+                        <span className="text-primary">{vehicle.stockNumber}</span>
+                        <span className="text-slate-400 mx-1">•</span>
+                        {vehicle.year} {vehicle.make} {vehicle.model}
                     </p>
-                    <p className="text-[10px] text-slate-500 truncate">{customerName}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                        <p className="text-xs text-slate-400">👤 {customerName}</p>
+                        {saleDate && <p className="text-xs text-slate-500">📅 {saleDate}</p>}
+                    </div>
                 </div>
                 <StatusBadge status="sold" />
             </div>
