@@ -148,7 +148,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function Dashboard() {
                             <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                    <div className="p-3 space-y-2 flex-1 overflow-y-auto">
                         {pendingPickups.length > 0 ? pendingPickups.slice(0, 5).map((v) => (
                             <VehicleRow key={v.id} vehicle={v} onClick={() => setSelectedVehicle(v)} accentColor="amber" />
                         )) : <EmptyState text="No pending pickups" />}
@@ -176,7 +176,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export default function Dashboard() {
                             <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                    <div className="p-3 space-y-2 flex-1 overflow-y-auto">
                         {scheduledPickups.length > 0 ? scheduledPickups.slice(0, 5).map((v) => (
                             <VehicleRow key={v.id} vehicle={v} showDate onClick={() => setSelectedVehicle(v)} accentColor="emerald" />
                         )) : <EmptyState text="No scheduled pickups" />}
@@ -204,7 +204,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="lg:col-span-1 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden"
+                    className="flex flex-col bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden min-h-[280px]"
                 >
                     <div className="px-4 py-3 border-b border-slate-700/50 flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function Dashboard() {
                             <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
-                    <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
+                    <div className="p-3 space-y-2 flex-1 overflow-y-auto">
                         {weeklySales.length > 0 ? weeklySales.slice(0, 5).map((v) => (
                             <SaleRow key={v.id} vehicle={v} onClick={() => setSelectedVehicle(v)} />
                         )) : <EmptyState text="No sales this week" />}
@@ -256,7 +256,7 @@ function VehicleRow({ vehicle, onClick, showDate = false, accentColor = "blue" }
                     </p>
                     {showDate && vehicle.pickupDate && (
                         <p className="text-[10px] text-emerald-400 mt-0.5">
-                            📅 {new Date(vehicle.pickupDate).toLocaleDateString()} @ {vehicle.pickupTime || 'TBD'}
+                            📅 {new Date(vehicle.pickupDate + 'T00:00:00').toLocaleDateString()} @ {vehicle.pickupTime || 'TBD'}
                         </p>
                     )}
                 </div>

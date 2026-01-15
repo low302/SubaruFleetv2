@@ -15,7 +15,7 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
         const map = {};
         scheduledPickups.forEach(vehicle => {
             if (vehicle.pickupDate) {
-                const dateKey = new Date(vehicle.pickupDate).toDateString();
+                const dateKey = new Date(vehicle.pickupDate + 'T00:00:00').toDateString();
                 if (!map[dateKey]) map[dateKey] = [];
                 map[dateKey].push({ vehicle, time: vehicle.pickupTime || '09:00' });
             }
@@ -72,7 +72,7 @@ export default function DashboardCalendar({ scheduledPickups = [] }) {
         weekFromNow.setDate(weekFromNow.getDate() + 7);
         scheduledPickups.forEach(v => {
             if (v.pickupDate) {
-                const d = new Date(v.pickupDate);
+                const d = new Date(v.pickupDate + 'T00:00:00');
                 if (d >= today && d <= weekFromNow) count++;
             }
         });

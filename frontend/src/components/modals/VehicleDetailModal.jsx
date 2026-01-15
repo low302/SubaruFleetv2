@@ -1007,7 +1007,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                         </div>
                                     ) : (
                                         <p className="text-sm text-slate-300">
-                                            {new Date(vehicle.pickupDate).toLocaleDateString()} at {vehicle.pickupTime}
+                                            {new Date(vehicle.pickupDate + 'T00:00:00').toLocaleDateString()} at {vehicle.pickupTime}
                                         </p>
                                     )}
                                 </div>
