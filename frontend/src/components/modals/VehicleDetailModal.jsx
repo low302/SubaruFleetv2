@@ -135,7 +135,13 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            await inventoryApi.update(vehicle.id, formData);
+            // Merge original vehicle data with edited formData to ensure all fields are included
+            const updatedVehicle = {
+                ...vehicle,
+                ...formData,
+                id: vehicle.id, // Ensure id is always included
+            };
+            await inventoryApi.update(vehicle.id, updatedVehicle);
             setIsEditing(false);
             onUpdate?.();
         } catch (error) {
