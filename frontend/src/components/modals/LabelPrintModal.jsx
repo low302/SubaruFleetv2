@@ -74,78 +74,131 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Window Label - ${v.stockNumber}</title>
+    <title>Folder Label - ${v.stockNumber}</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
     <style>
         @page { size: 8.5in 11in; margin: 0; }
         * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Ubuntu', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        }
         .label {
             position: absolute;
             top: ${position.top};
             left: ${position.left};
             width: 4in;
             height: 2in;
-            padding: 0.1in;
+            padding: 12px;
             display: flex;
-            border: 1px solid #333;
+            gap: 12px;
+            background: white;
+            border: 1px solid #ccc;
         }
-        .label-content {
-            flex: 1;
+        .qr-container {
+            flex-shrink: 0;
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            align-items: center;
+            justify-content: center;
         }
-        .stock-number {
-            font-size: 24pt;
-            font-weight: bold;
-            color: #000;
-            margin-bottom: 4px;
+        #qrcode {
+            width: 140px;
+            height: 140px;
+            background: #fff;
         }
-        .vehicle {
-            font-size: 14pt;
-            font-weight: bold;
-            color: #000;
-            margin-bottom: 4px;
+        #qrcode img {
+            display: block;
         }
-        .info-line {
-            font-size: 9pt;
-            color: #000;
-            margin: 2px 0;
-        }
-        .info-line strong {
-            color: #000;
-        }
-        .qr-placeholder {
-            width: 1.4in;
-            height: 1.4in;
+        .qr-fallback {
+            width: 140px;
+            height: 140px;
             background: #f0f0f0;
             border: 2px solid #ccc;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 7pt;
+            font-size: 9px;
             text-align: center;
             font-family: monospace;
             word-break: break-all;
-            padding: 4px;
+            padding: 8px;
+            font-weight: 600;
+            color: #000;
+        }
+        .label-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+        .stock-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .vehicle {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        .info-container {
+            font-size: 11px;
+            color: #000;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .info-line {
+            margin: 2px 0;
+        }
+        .info-line strong {
+            color: #000;
         }
     </style>
 </head>
 <body>
     <div class="label">
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
         <div class="label-content">
-            <div>
-                <div class="stock-number">Stock #${v.stockNumber || ''}</div>
-                <div class="vehicle">${v.year} ${v.make} ${v.model}</div>
-            </div>
-            <div>
+            <div class="stock-number">Stock #${v.stockNumber || ''}</div>
+            <div class="vehicle">${v.year} ${v.make} ${v.model}</div>
+            <div class="info-container">
                 <div class="info-line"><strong>VIN:</strong> ${v.vin || ''}</div>
                 <div class="info-line"><strong>Trim:</strong> ${v.trim || 'N/A'} • <strong>Color:</strong> ${v.color || 'N/A'}</div>
                 <div class="info-line"><strong>Op Co:</strong> ${v.operationCompany || 'N/A'} • <strong>Fleet:</strong> ${v.fleetCompany || 'N/A'}</div>
             </div>
         </div>
-        <div class="qr-placeholder">${v.vin || ''}</div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(document.getElementById('qrcode'), {
+                        text: '${v.vin || ''}',
+                        width: 140,
+                        height: 140,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    throw new Error('QRCode library not loaded');
+                }
+            } catch (error) {
+                console.error('QRCode error:', error);
+                document.getElementById('qrcode').innerHTML = '<div class="qr-fallback">${v.vin || ''}</div>';
+            }
+        });
+    <\/script>
 </body>
 </html>`;
     };
@@ -183,8 +236,8 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
             width: 2.625in;
             height: 1in;
             padding: 6px 9px;
-            background: #334155;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: white;
+            border: 1px solid #ccc;
             border-radius: 6px;
             display: flex;
             gap: 8px;
@@ -192,7 +245,7 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
             overflow: hidden;
         }
         .stock-box {
-            background: rgba(255, 255, 255, 0.9);
+            background: #e2e8f0;
             color: #0f172a;
             padding: 6px 9px;
             border-radius: 4px;
@@ -212,7 +265,7 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
         .stock-number {
             font-size: 15px;
             font-weight: 800;
-            color: #0f172a;
+            color: #000;
             margin-top: 2px;
             white-space: nowrap;
             overflow: hidden;
