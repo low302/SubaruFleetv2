@@ -14,15 +14,11 @@ import {
     BarChart3,
     Settings,
     LogOut,
-    Download,
-    Upload,
     ChevronUp,
 } from "lucide-react";
 import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { useAuth } from "../../context/AuthContext";
-import ImportModal from "../modals/ImportModal";
 import SystemSettingsModal from "../modals/SystemSettingsModal";
-import { dataTransfer } from "../../services/api";
 
 // Navigation sections matching original app
 const navSections = [
@@ -95,13 +91,11 @@ const navSections = [
 
 export default function AppLayout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [importModalOpen, setImportModalOpen] = useState(false);
     const [settingsModalOpen, setSettingsModalOpen] = useState(false);
     const [userDropdownOpen, setUserDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -118,30 +112,6 @@ export default function AppLayout() {
     const handleLogout = async () => {
         await logout();
         navigate("/login");
-    };
-
-    const handleExport = async () => {
-        try {
-            const data = await dataTransfer.exportAll();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `fleet-inventory-export-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Export failed:', error);
-            alert('Export failed: ' + error.message);
-        }
-    };
-
-    const handleImportSuccess = () => {
-        // Refresh the current page data by navigating to the same route
-        navigate(location.pathname, { replace: true });
-        window.location.reload();
     };
 
     const handleOpenSettings = () => {
@@ -192,51 +162,6 @@ export default function AppLayout() {
                                 </nav>
                             </div>
                         ))}
-
-                        {/* Data Section (Import/Export) */}
-                        <div className="mb-4">
-                            <motion.div
-                                className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
-                                animate={{
-                                    display: sidebarOpen ? "block" : "none",
-                                    opacity: sidebarOpen ? 1 : 0,
-                                }}
-                            >
-                                Data
-                            </motion.div>
-                            <nav className="flex flex-col gap-0.5">
-                                <button
-                                    onClick={() => setImportModalOpen(true)}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
-                                >
-                                    <Upload className="h-5 w-5 shrink-0" />
-                                    <motion.span
-                                        className="text-sm font-medium whitespace-pre"
-                                        animate={{
-                                            display: sidebarOpen ? "inline-block" : "none",
-                                            opacity: sidebarOpen ? 1 : 0,
-                                        }}
-                                    >
-                                        Import Data
-                                    </motion.span>
-                                </button>
-                                <button
-                                    onClick={handleExport}
-                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
-                                >
-                                    <Download className="h-5 w-5 shrink-0" />
-                                    <motion.span
-                                        className="text-sm font-medium whitespace-pre"
-                                        animate={{
-                                            display: sidebarOpen ? "inline-block" : "none",
-                                            opacity: sidebarOpen ? 1 : 0,
-                                        }}
-                                    >
-                                        Export Data
-                                    </motion.span>
-                                </button>
-                            </nav>
-                        </div>
                     </div>
 
                     {/* User Section */}
@@ -309,16 +234,9 @@ export default function AppLayout() {
             </Sidebar>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto transition-all duration-300 ease-in-out">
                 <Outlet />
             </main>
-
-            {/* Import Modal */}
-            <ImportModal
-                isOpen={importModalOpen}
-                onClose={() => setImportModalOpen(false)}
-                onImportSuccess={handleImportSuccess}
-            />
 
             {/* System Settings Modal */}
             <SystemSettingsModal

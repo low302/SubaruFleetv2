@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Wrench, Search, Loader2, CheckCircle, AlertTriangle, Tag, Printer } from 'lucide-react';
+import { X, Wrench, Search, Loader2, CheckCircle, AlertTriangle, Tag, Printer, Download, Upload } from 'lucide-react';
 import { Button } from '../ui/button';
-import { inventory as inventoryApi } from '../../services/api';
+import { inventory as inventoryApi, dataTransfer } from '../../services/api';
 import LabelPrintModal from './LabelPrintModal';
 
 export default function SystemSettingsModal({ isOpen, onClose }) {
@@ -18,6 +18,12 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [showLabelModal, setShowLabelModal] = useState(false);
     const [allVehicles, setAllVehicles] = useState([]);
+
+    // Import/Export state
+    const [isExporting, setIsExporting] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const [importResult, setImportResult] = useState(null);
+    const fileInputRef = useState(null);
 
     // Load vehicles on mount
     useEffect(() => {
@@ -163,12 +169,61 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
         }
     };
 
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const data = await dataTransfer.exportAll();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fleet-inventory-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setImportResult({ success: true, message: 'Export completed successfully!' });
+        } catch (error) {
+            console.error('Export failed:', error);
+            setImportResult({ success: false, message: 'Export failed: ' + error.message });
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleImportFile = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        setImportResult(null);
+
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const result = await dataTransfer.importAll(data);
+            setImportResult({
+                success: true,
+                message: `Import successful! ${result.imported || 'Data'} imported.`
+            });
+            // Reload page to refresh data
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            console.error('Import failed:', error);
+            setImportResult({ success: false, message: 'Import failed: ' + error.message });
+        } finally {
+            setIsImporting(false);
+            event.target.value = '';
+        }
+    };
+
     const handleClose = () => {
         setFixDatesResult(null);
         setScanResult(null);
         setSearchQuery('');
         setSearchResults([]);
         setSelectedVehicle(null);
+        setImportResult(null);
         onClose();
     };
 
@@ -427,6 +482,91 @@ export default function SystemSettingsModal({ isOpen, onClose }) {
                                                     </>
                                                 )}
                                             </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Import/Export Section */}
+                            <div>
+                                <h3 className="text-base font-semibold text-slate-200 mb-4 pb-2 border-b border-slate-600/50">
+                                    Import / Export Data
+                                </h3>
+
+                                <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-600/50">
+                                    <div className="flex items-start gap-4">
+                                        <div className="text-2xl">📦</div>
+                                        <div className="flex-1">
+                                            <h4 className="text-sm font-semibold text-slate-200 mb-1">
+                                                Backup & Restore Data
+                                            </h4>
+                                            <p className="text-xs text-slate-400 mb-3">
+                                                Export all inventory data as a JSON file for backup, or import data from a previous export.
+                                            </p>
+
+                                            {importResult && (
+                                                <div className={`p-2 rounded-lg mb-3 text-sm flex items-center gap-2 ${importResult.success
+                                                    ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                                                    : 'bg-red-500/10 text-red-400 border border-red-500/30'
+                                                    }`}>
+                                                    {importResult.success ? (
+                                                        <CheckCircle className="h-4 w-4" />
+                                                    ) : (
+                                                        <AlertTriangle className="h-4 w-4" />
+                                                    )}
+                                                    {importResult.message}
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    className="flex-1"
+                                                    onClick={handleExport}
+                                                    disabled={isExporting}
+                                                >
+                                                    {isExporting ? (
+                                                        <>
+                                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                            Exporting...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Download className="h-4 w-4 mr-2" />
+                                                            Export Data
+                                                        </>
+                                                    )}
+                                                </Button>
+
+                                                <label className="flex-1">
+                                                    <input
+                                                        type="file"
+                                                        accept=".json"
+                                                        onChange={handleImportFile}
+                                                        className="hidden"
+                                                        disabled={isImporting}
+                                                    />
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="w-full"
+                                                        as="span"
+                                                        disabled={isImporting}
+                                                        onClick={(e) => e.target.closest('label').querySelector('input').click()}
+                                                    >
+                                                        {isImporting ? (
+                                                            <>
+                                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                                Importing...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Upload className="h-4 w-4 mr-2" />
+                                                                Import Data
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
