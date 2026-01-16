@@ -104,12 +104,12 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
         .vehicle {
             font-size: 14pt;
             font-weight: bold;
-            color: #333;
+            color: #000;
             margin-bottom: 4px;
         }
         .info-line {
             font-size: 9pt;
-            color: #333;
+            color: #000;
             margin: 2px 0;
         }
         .info-line strong {
@@ -206,7 +206,7 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
         .stock-label {
             font-size: 9px;
             font-weight: 600;
-            color: #334155;
+            color: #000;
             letter-spacing: 0.02em;
         }
         .stock-number {
@@ -230,14 +230,14 @@ export default function LabelPrintModal({ vehicle, isOpen, onClose, keyTagOnly =
         .vehicle {
             font-size: 11px;
             font-weight: 700;
-            color: #e2e8f0;
+            color: #000;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .info-line {
             font-size: 9px;
-            color: #cbd5e1;
+            color: #000;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
