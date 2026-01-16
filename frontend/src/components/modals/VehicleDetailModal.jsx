@@ -1103,7 +1103,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 
                         {/* Delete Confirmation */}
                         {showDeleteConfirm && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4">
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]">
                                 <div className="glass rounded-xl p-6 max-w-sm">
                                     <h3 className="text-lg font-semibold text-slate-100 mb-2">Delete Vehicle?</h3>
                                     <p className="text-sm text-slate-400 mb-4">
@@ -1127,7 +1127,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 
                         {/* Schedule Pickup Modal */}
                         {showScheduleModal && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4">
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]">
                                 <div className="glass rounded-xl p-6 max-w-sm w-full">
                                     <h3 className="text-lg font-semibold text-slate-100 mb-4">Schedule Pickup</h3>
                                     <div className="space-y-4">
@@ -1261,7 +1261,7 @@ function SoldModal({ vehicle, onClose, onSubmit, isLoading }) {
     ];
 
     return (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]">
             <div className="glass-strong rounded-xl p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-slate-100 mb-4">Mark as Sold</h3>
 

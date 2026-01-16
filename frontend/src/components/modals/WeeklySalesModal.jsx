@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { StatusBadge } from '../ui/badge';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) {
     if (!isOpen) return null;
@@ -102,7 +102,7 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
             `$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
         ]);
 
-        doc.autoTable({
+        autoTable(doc, {
             head: [['Stock #', 'Vehicle', 'Customer', 'Sale Date', 'Amount']],
             body: tableData,
             startY: 38,
