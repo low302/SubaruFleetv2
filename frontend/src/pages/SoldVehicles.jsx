@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "motion/react";
-import { Search, Download } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, Download, Calendar, X, Check } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Select } from "../components/ui/input";
 import { soldVehicles } from "../services/api";
@@ -13,6 +13,9 @@ export default function SoldVehicles() {
     const [selectedMonth, setSelectedMonth] = useState("");
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [editingSaleDate, setEditingSaleDate] = useState(null); // Vehicle ID being edited
+    const [newSaleDate, setNewSaleDate] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         loadSoldVehicles();
@@ -104,6 +107,50 @@ export default function SoldVehicles() {
         // Sort by sale date, newest first
         return result.sort((a, b) => getRawSaleDate(b) - getRawSaleDate(a));
     }, [vehicles, search, selectedMonth, selectedYear]);
+
+    // Start editing a sale date
+    const handleEditSaleDate = (vehicle, e) => {
+        e.stopPropagation(); // Prevent row click
+        const currentDate = vehicle.customer?.saleDate || new Date().toISOString().split('T')[0];
+        setNewSaleDate(currentDate);
+        setEditingSaleDate(vehicle.id);
+    };
+
+    // Save the updated sale date
+    const handleSaveSaleDate = async (vehicle, e) => {
+        e.stopPropagation(); // Prevent row click
+        if (!newSaleDate) return;
+
+        setIsSaving(true);
+        try {
+            const updatedCustomer = {
+                ...vehicle.customer,
+                saleDate: newSaleDate,
+            };
+
+            await soldVehicles.update(vehicle.id, {
+                ...vehicle,
+                customer: updatedCustomer,
+            });
+
+            // Refresh the list
+            loadSoldVehicles();
+            setEditingSaleDate(null);
+            setNewSaleDate("");
+        } catch (error) {
+            console.error("Failed to update sale date:", error);
+            alert("Failed to update sale date: " + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Cancel editing
+    const handleCancelEdit = (e) => {
+        e.stopPropagation();
+        setEditingSaleDate(null);
+        setNewSaleDate("");
+    };
 
     const exportToCSV = () => {
         const headers = ["Stock #", "VIN", "Year", "Make", "Model", "Customer", "Fleet", "Operation Company", "Sold Date"];
@@ -235,7 +282,43 @@ export default function SoldVehicles() {
                                         onClick={() => setSelectedVehicle(vehicle)}
                                     >
                                         <td className="px-4 py-3 text-sm text-slate-300">
-                                            {getSaleDate(vehicle)}
+                                            {editingSaleDate === vehicle.id ? (
+                                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="date"
+                                                        value={newSaleDate}
+                                                        onChange={(e) => setNewSaleDate(e.target.value)}
+                                                        className="px-2 py-1 rounded text-sm text-slate-200 bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        onClick={(e) => handleSaveSaleDate(vehicle, e)}
+                                                        disabled={isSaving}
+                                                        className="p-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                                                        title="Save"
+                                                    >
+                                                        <Check className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleCancelEdit}
+                                                        className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                                                        title="Cancel"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 group">
+                                                    <span>{getSaleDate(vehicle)}</span>
+                                                    <button
+                                                        onClick={(e) => handleEditSaleDate(vehicle, e)}
+                                                        className="p-1 rounded opacity-0 group-hover:opacity-100 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all"
+                                                        title="Edit Sale Date"
+                                                    >
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-sm font-medium text-primary">{vehicle.stockNumber}</td>
                                         <td className="px-4 py-3 text-sm text-slate-300">
