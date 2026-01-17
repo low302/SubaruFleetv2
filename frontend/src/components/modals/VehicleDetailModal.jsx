@@ -768,7 +768,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     <style>
         @page {
             size: letter;
-            margin: 0.3in;
+            margin: 0.5in;
         }
         * {
             margin: 0;
@@ -779,14 +779,13 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: #1e293b;
             background: white;
-            font-size: 10px;
-            line-height: 1.3;
+            font-size: 11px;
+            line-height: 1.4;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         .page {
-            width: 7.9in;
-            max-height: 10.4in;
+            width: 7.5in;
             padding: 0;
             margin: 0 auto;
             background: white;
@@ -795,14 +794,14 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         /* Header */
         .header {
             background: white;
-            padding: 12px 20px;
+            padding: 20px 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 2px solid #1e40af;
+            border-bottom: 3px solid #1e40af;
         }
         .header img {
-            height: 50px;
+            height: 65px;
             width: auto;
         }
         
@@ -810,48 +809,48 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .title-bar {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
-            padding: 10px 20px;
+            padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .title-bar h1 {
-            font-size: 16px;
+            font-size: 22px;
             font-weight: 700;
         }
         .title-bar .stock-badge {
             background: rgba(255,255,255,0.2);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
             font-weight: 600;
         }
         
         /* Content */
         .content {
-            padding: 12px 20px;
+            padding: 20px 24px;
         }
         
         /* Section */
         .section {
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
         .section-header {
             background: #f1f5f9;
-            padding: 5px 10px;
+            padding: 10px 16px;
             font-weight: 700;
-            font-size: 9px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #475569;
-            border-radius: 4px 4px 0 0;
+            border-radius: 6px 6px 0 0;
             border: 1px solid #e2e8f0;
             border-bottom: none;
         }
         .section-body {
             border: 1px solid #e2e8f0;
-            border-radius: 0 0 4px 4px;
-            padding: 8px 10px;
+            border-radius: 0 0 6px 6px;
+            padding: 16px;
             background: white;
         }
         
@@ -859,7 +858,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .info-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 16px;
         }
         .info-grid.two-col {
             grid-template-columns: repeat(2, 1fr);
@@ -872,14 +871,14 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             flex-direction: column;
         }
         .info-label {
-            font-size: 8px;
+            font-size: 10px;
             color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 0.2px;
-            margin-bottom: 1px;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
         }
         .info-value {
-            font-size: 10px;
+            font-size: 13px;
             font-weight: 500;
             color: #1e293b;
         }
@@ -888,28 +887,28 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             font-weight: 700;
         }
         .info-value.large {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 700;
         }
         
         /* Highlight Box */
         .highlight-box {
             background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-            border: 1px solid #10b981;
-            border-radius: 6px;
-            padding: 10px 14px;
-            margin-bottom: 10px;
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            padding: 18px 24px;
+            margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .highlight-box .label {
-            font-size: 11px;
+            font-size: 14px;
             color: #065f46;
-            font-weight: 500;
+            font-weight: 600;
         }
         .highlight-box .value {
-            font-size: 18px;
+            font-size: 28px;
             font-weight: 700;
             color: #047857;
         }
@@ -918,44 +917,44 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .trade-section {
             background: #fef3c7;
             border: 1px solid #f59e0b;
-            border-radius: 6px;
-            padding: 8px 10px;
+            border-radius: 8px;
+            padding: 14px 16px;
         }
         .trade-header {
             font-weight: 700;
             color: #92400e;
-            margin-bottom: 6px;
-            font-size: 9px;
+            margin-bottom: 12px;
+            font-size: 11px;
             text-transform: uppercase;
         }
         .no-trade {
             color: #64748b;
             font-style: italic;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         /* Summary Row */
         .summary-row {
             display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
         .summary-card {
             flex: 1;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 8px;
+            border-radius: 10px;
+            padding: 16px;
             text-align: center;
         }
         .summary-card .label {
-            font-size: 8px;
+            font-size: 10px;
             color: #64748b;
             text-transform: uppercase;
-            margin-bottom: 2px;
+            margin-bottom: 6px;
         }
         .summary-card .value {
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 700;
             color: #1e293b;
         }
@@ -970,18 +969,18 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Footer */
         .footer {
-            padding: 10px 20px;
+            padding: 16px 24px;
             background: #f8fafc;
             border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
-            font-size: 8px;
+            font-size: 10px;
             color: #94a3b8;
         }
         
         @media print {
             body { background: white; }
-            .page { width: 100%; max-height: none; }
+            .page { width: 100%; }
         }
     </style>
 </head>
