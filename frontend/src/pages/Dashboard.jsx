@@ -70,7 +70,7 @@ export default function Dashboard() {
             const weekSales = soldData.filter((v) => {
                 const saleDate = getSaleDate(v);
                 return saleDate >= startOfWeek && saleDate <= endOfWeek;
-            }).slice(0, 10);
+            });
 
             const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             setWeeklySalesDateRange(`${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`);
