@@ -373,15 +373,15 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Header with Logo */
         .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
-            color: white;
-            padding: 20px 32px;
+            background: white;
+            padding: 24px 32px;
             display: flex;
             justify-content: center;
             align-items: center;
+            border-bottom: 1px solid #e2e8f0;
         }
         .header img {
-            height: 55px;
+            height: 80px;
             width: auto;
         }
         
@@ -579,7 +579,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     <div class="page">
         <!-- Header with Logo -->
         <div class="header">
-            <img src="https://di-uploads-development.dealerinspire.com/brandontomessubaru/uploads/2022/09/logo-desktop-600x200.png" alt="Brandon Tomes Subaru" style="height: 50px; width: auto;" />
+            <img src="https://di-uploads-development.dealerinspire.com/brandontomessubaru/uploads/2022/09/logo-desktop-600x200.png" alt="Brandon Tomes Subaru" />
         </div>
 
         <div class="content">
@@ -587,11 +587,6 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             <div class="vehicle-hero">
                 <div class="vehicle-hero-title">
                     Vehicle Pickup Acknowledgement
-                </div>
-                <div class="vehicle-hero-subtitle">
-                    <span><strong>Stock:</strong> ${vehicle.stockNumber}</span>
-                    <span><strong>VIN:</strong> ${vehicle.vin}</span>
-                    <span><strong>Vehicle:</strong> ${vehicle.year} ${vehicle.make} ${vehicle.model}</span>
                 </div>
             </div>
 
