@@ -807,20 +807,21 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Title Bar */
         .title-bar {
-            background: #000;
-            color: white;
+            background: white;
+            color: #000;
             padding: 16px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 2px solid #000;
         }
         .title-bar h1 {
             font-size: 22px;
             font-weight: 700;
         }
         .title-bar .stock-badge {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid white;
+            background: #f5f5f5;
+            border: 1px solid #000;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 13px;
@@ -960,12 +961,12 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             color: #000;
         }
         .summary-card.primary {
-            background: #000;
-            border-color: #000;
+            background: white;
+            border: 2px solid #000;
         }
         .summary-card.primary .label,
         .summary-card.primary .value {
-            color: white;
+            color: #000;
         }
         
         /* Footer */
