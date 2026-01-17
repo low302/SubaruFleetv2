@@ -768,7 +768,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     <style>
         @page {
             size: letter;
-            margin: 0.4in;
+            margin: 0.3in;
         }
         * {
             margin: 0;
@@ -779,14 +779,14 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: #1e293b;
             background: white;
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 10px;
+            line-height: 1.3;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         .page {
-            width: 7.7in;
-            min-height: 10.2in;
+            width: 7.9in;
+            max-height: 10.4in;
             padding: 0;
             margin: 0 auto;
             background: white;
@@ -795,14 +795,14 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         /* Header */
         .header {
             background: white;
-            padding: 20px 28px;
+            padding: 12px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             border-bottom: 2px solid #1e40af;
         }
         .header img {
-            height: 70px;
+            height: 50px;
             width: auto;
         }
         
@@ -810,72 +810,76 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .title-bar {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
-            padding: 14px 28px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .title-bar h1 {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 700;
         }
         .title-bar .stock-badge {
             background: rgba(255,255,255,0.2);
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
             font-weight: 600;
         }
         
         /* Content */
         .content {
-            padding: 20px 28px;
+            padding: 12px 20px;
         }
         
         /* Section */
         .section {
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
         .section-header {
             background: #f1f5f9;
-            padding: 8px 14px;
+            padding: 5px 10px;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #475569;
-            border-radius: 6px 6px 0 0;
+            border-radius: 4px 4px 0 0;
             border: 1px solid #e2e8f0;
             border-bottom: none;
         }
         .section-body {
             border: 1px solid #e2e8f0;
-            border-radius: 0 0 6px 6px;
-            padding: 12px 14px;
+            border-radius: 0 0 4px 4px;
+            padding: 8px 10px;
             background: white;
         }
         
         /* Info Grid */
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
         }
         .info-grid.two-col {
             grid-template-columns: repeat(2, 1fr);
+        }
+        .info-grid.three-col {
+            grid-template-columns: repeat(3, 1fr);
         }
         .info-item {
             display: flex;
             flex-direction: column;
         }
         .info-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-bottom: 2px;
+            letter-spacing: 0.2px;
+            margin-bottom: 1px;
         }
         .info-value {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 500;
             color: #1e293b;
         }
@@ -884,7 +888,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             font-weight: 700;
         }
         .info-value.large {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
         }
         
@@ -892,20 +896,20 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .highlight-box {
             background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
             border: 1px solid #10b981;
-            border-radius: 8px;
-            padding: 14px 18px;
-            margin-bottom: 16px;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .highlight-box .label {
-            font-size: 12px;
+            font-size: 11px;
             color: #065f46;
             font-weight: 500;
         }
         .highlight-box .value {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
             color: #047857;
         }
@@ -914,44 +918,44 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         .trade-section {
             background: #fef3c7;
             border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 12px 14px;
+            border-radius: 6px;
+            padding: 8px 10px;
         }
         .trade-header {
             font-weight: 700;
             color: #92400e;
-            margin-bottom: 10px;
-            font-size: 11px;
+            margin-bottom: 6px;
+            font-size: 9px;
             text-transform: uppercase;
         }
         .no-trade {
             color: #64748b;
             font-style: italic;
-            font-size: 11px;
+            font-size: 10px;
         }
         
         /* Summary Row */
         .summary-row {
             display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
         .summary-card {
             flex: 1;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: 6px;
+            padding: 8px;
             text-align: center;
         }
         .summary-card .label {
-            font-size: 9px;
+            font-size: 8px;
             color: #64748b;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .summary-card .value {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             color: #1e293b;
         }
@@ -966,18 +970,18 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Footer */
         .footer {
-            padding: 14px 28px;
+            padding: 10px 20px;
             background: #f8fafc;
             border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
-            font-size: 9px;
+            font-size: 8px;
             color: #94a3b8;
         }
         
         @media print {
             body { background: white; }
-            .page { width: 100%; }
+            .page { width: 100%; max-height: none; }
         }
     </style>
 </head>
@@ -1054,11 +1058,11 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                 </div>
             </div>
 
-            <!-- Customer Information -->
+            <!-- Customer & Company Information (Combined) -->
             <div class="section">
-                <div class="section-header">Customer Information</div>
+                <div class="section-header">Customer & Company Information</div>
                 <div class="section-body">
-                    <div class="info-grid two-col">
+                    <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label">Customer Name</span>
                             <span class="info-value highlight">${customerName || '—'}</span>
@@ -1067,19 +1071,6 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                             <span class="info-label">Phone</span>
                             <span class="info-value">${vehicle.customer?.phone || '—'}</span>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">Email</span>
-                            <span class="info-value">${vehicle.customer?.email || '—'}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Fleet & Operating Company -->
-            <div class="section">
-                <div class="section-header">Fleet & Operating Company</div>
-                <div class="section-body">
-                    <div class="info-grid two-col">
                         <div class="info-item">
                             <span class="info-label">Fleet Company</span>
                             <span class="info-value">${vehicle.fleetCompany || '—'}</span>
@@ -1128,16 +1119,8 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                             <span class="info-value">${tradeIn.vin || '—'}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Year</span>
-                            <span class="info-value">${tradeIn.year || '—'}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Make</span>
-                            <span class="info-value">${tradeIn.make || '—'}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Model</span>
-                            <span class="info-value">${tradeIn.model || '—'}</span>
+                            <span class="info-label">Year / Make / Model</span>
+                            <span class="info-value">${tradeIn.year || ''} ${tradeIn.make || ''} ${tradeIn.model || ''}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Color</span>
