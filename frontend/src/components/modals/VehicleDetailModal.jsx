@@ -371,37 +371,18 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             background: white;
         }
         
-        /* Header with gradient */
+        /* Header with Logo */
         .header {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
             color: white;
-            padding: 28px 32px;
+            padding: 20px 32px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
         }
-        .header-left h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            letter-spacing: -0.5px;
-        }
-        .header-left .subtitle {
-            font-size: 13px;
-            opacity: 0.9;
-            font-weight: 400;
-        }
-        .header-right {
-            text-align: right;
-        }
-        .header-right .company {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        .header-right .dept {
-            font-size: 12px;
-            opacity: 0.85;
+        .header img {
+            height: 55px;
+            width: auto;
         }
         
         /* Content area */
@@ -596,28 +577,21 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 </head>
 <body>
     <div class="page">
-        <!-- Header -->
+        <!-- Header with Logo -->
         <div class="header">
-            <div class="header-left">
-                <h1>Vehicle Pickup Acknowledgement</h1>
-                <div class="subtitle">Official Delivery Documentation</div>
-            </div>
-            <div class="header-right">
-                <div class="company">Brandon Tomes Subaru</div>
-                <div class="dept">Fleet Department</div>
-            </div>
+            <img src="https://di-uploads-development.dealerinspire.com/brandontomessubaru/uploads/2022/09/logo-desktop-600x200.png" alt="Brandon Tomes Subaru" style="height: 50px; width: auto;" />
         </div>
 
         <div class="content">
-            <!-- Vehicle Hero -->
+            <!-- Title Section -->
             <div class="vehicle-hero">
                 <div class="vehicle-hero-title">
-                    ${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim || ''}
-                    <span class="badge">${vehicle.color || 'N/A'}</span>
+                    Vehicle Pickup Acknowledgement
                 </div>
                 <div class="vehicle-hero-subtitle">
                     <span><strong>Stock:</strong> ${vehicle.stockNumber}</span>
                     <span><strong>VIN:</strong> ${vehicle.vin}</span>
+                    <span><strong>Vehicle:</strong> ${vehicle.year} ${vehicle.make} ${vehicle.model}</span>
                 </div>
             </div>
 
