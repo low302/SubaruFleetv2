@@ -798,7 +798,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 3px solid #1e40af;
+            border-bottom: 3px solid #000;
         }
         .header img {
             height: 65px;
@@ -807,7 +807,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Title Bar */
         .title-bar {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background: #000;
             color: white;
             padding: 16px 24px;
             display: flex;
@@ -820,6 +820,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         }
         .title-bar .stock-badge {
             background: rgba(255,255,255,0.2);
+            border: 1px solid white;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 13px;
@@ -883,7 +884,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
             color: #1e293b;
         }
         .info-value.highlight {
-            color: #1e40af;
+            color: #000;
             font-weight: 700;
         }
         .info-value.large {
@@ -893,8 +894,8 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         
         /* Highlight Box */
         .highlight-box {
-            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-            border: 2px solid #10b981;
+            background: #f5f5f5;
+            border: 2px solid #000;
             border-radius: 10px;
             padding: 18px 24px;
             margin-bottom: 16px;
@@ -904,25 +905,25 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         }
         .highlight-box .label {
             font-size: 14px;
-            color: #065f46;
+            color: #333;
             font-weight: 600;
         }
         .highlight-box .value {
             font-size: 28px;
             font-weight: 700;
-            color: #047857;
+            color: #000;
         }
         
         /* Trade-in Section */
         .trade-section {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
+            background: #f5f5f5;
+            border: 1px solid #666;
             border-radius: 8px;
             padding: 14px 16px;
         }
         .trade-header {
             font-weight: 700;
-            color: #92400e;
+            color: #333;
             margin-bottom: 12px;
             font-size: 11px;
             text-transform: uppercase;
@@ -941,26 +942,26 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         }
         .summary-card {
             flex: 1;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
             border-radius: 10px;
             padding: 16px;
             text-align: center;
         }
         .summary-card .label {
             font-size: 10px;
-            color: #64748b;
+            color: #666;
             text-transform: uppercase;
             margin-bottom: 6px;
         }
         .summary-card .value {
             font-size: 16px;
             font-weight: 700;
-            color: #1e293b;
+            color: #000;
         }
         .summary-card.primary {
-            background: #1e40af;
-            border-color: #1e40af;
+            background: #000;
+            border-color: #000;
         }
         .summary-card.primary .label,
         .summary-card.primary .value {
