@@ -4,7 +4,6 @@ import { X, Edit2, Save, Trash2, User, FileText, Printer, DollarSign, FolderOpen
 import { Button } from '../ui/button';
 import { Input, Select, FormRow } from '../ui/input';
 import { inventory as inventoryApi, documents as documentsApi } from '../../services/api';
-import { jsPDF } from 'jspdf';
 
 // Status options available in dropdown (excludes 'sold' which is only set via Mark as Sold)
 const STATUS_OPTIONS = [
@@ -335,167 +334,284 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
 
         setIsGeneratingPDF(true);
         try {
-            const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.width;
-            const pageHeight = doc.internal.pageSize.height;
-            const margin = 15;
-            const contentWidth = pageWidth - margin * 2;
-
-            // ============ HEADER SECTION ============
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Vehicle Pickup Acknowledgement', pageWidth / 2, 20, { align: 'center' });
-
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.text('Brandon Tomes Subaru Fleet Department', pageWidth / 2, 28, { align: 'center' });
-
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.5);
-            doc.line(margin, 34, pageWidth - margin, 34);
-
-            let yPos = 44;
-
-            // ============ VEHICLE INFORMATION SECTION ============
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Vehicle Information', margin, yPos);
-            yPos += 6;
-
-            const rowHeight = 10;
-            const col1LabelWidth = 30;
-            const col1ValueWidth = 50;
-            const col2LabelWidth = 30;
-            const col2ValueWidth = contentWidth - col1LabelWidth - col1ValueWidth - col2LabelWidth;
-            const col2Start = margin + col1LabelWidth + col1ValueWidth;
-
-            // Helper function to draw a 2-column row
-            const draw2ColRow = (label1, value1, label2, value2, y) => {
-                doc.setDrawColor(150, 150, 150);
-                doc.setLineWidth(0.3);
-
-                // Column 1 - Label
-                doc.setFillColor(240, 240, 240);
-                doc.rect(margin, y, col1LabelWidth, rowHeight, 'FD');
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text(label1, margin + 2, y + 6.5);
-
-                // Column 1 - Value
-                doc.setFillColor(255, 255, 255);
-                doc.rect(margin + col1LabelWidth, y, col1ValueWidth, rowHeight, 'FD');
-                doc.setFont('helvetica', 'normal');
-                doc.text(value1 || '', margin + col1LabelWidth + 2, y + 6.5);
-
-                // Column 2 - Label
-                doc.setFillColor(240, 240, 240);
-                doc.rect(col2Start, y, col2LabelWidth, rowHeight, 'FD');
-                doc.setFont('helvetica', 'bold');
-                doc.text(label2, col2Start + 2, y + 6.5);
-
-                // Column 2 - Value
-                doc.setFillColor(255, 255, 255);
-                doc.rect(col2Start + col2LabelWidth, y, col2ValueWidth, rowHeight, 'FD');
-                doc.setFont('helvetica', 'normal');
-                doc.text(value2 || '', col2Start + col2LabelWidth + 2, y + 6.5);
-
-                return y + rowHeight;
-            };
-
-            // Helper function to draw a full-width row
-            const drawFullWidthRow = (label, value, y) => {
-                const labelWidth = 30;
-                const valueWidth = contentWidth - labelWidth;
-
-                doc.setDrawColor(150, 150, 150);
-                doc.setLineWidth(0.3);
-
-                // Label
-                doc.setFillColor(240, 240, 240);
-                doc.rect(margin, y, labelWidth, rowHeight, 'FD');
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text(label, margin + 2, y + 6.5);
-
-                // Value
-                doc.setFillColor(255, 255, 255);
-                doc.rect(margin + labelWidth, y, valueWidth, rowHeight, 'FD');
-                doc.setFont('helvetica', 'normal');
-                doc.text(value || '', margin + labelWidth + 2, y + 6.5);
-
-                return y + rowHeight;
-            };
-
-            // Vehicle rows
-            yPos = draw2ColRow('Stock #:', vehicle.stockNumber || '', 'VIN:', vehicle.vin || '', yPos);
-            yPos = draw2ColRow('Year:', vehicle.year?.toString() || '', 'Make:', vehicle.make || '', yPos);
-            yPos = draw2ColRow('Model:', vehicle.model || '', 'Trim:', vehicle.trim || '', yPos);
-            yPos = drawFullWidthRow('Color:', vehicle.color || '', yPos);
-
-            yPos += 10;
-
-            // ============ COMPANY & CUSTOMER INFORMATION SECTION ============
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Company & Customer Information', margin, yPos);
-            yPos += 6;
-
-            yPos = drawFullWidthRow('Fleet Company:', vehicle.fleetCompany || '', yPos);
-            yPos = drawFullWidthRow('Operation Co.:', vehicle.operationCompany || '', yPos);
-
             const customerName = vehicle.customer
                 ? vehicle.customer.name || `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || ''
                 : '';
-            yPos = drawFullWidthRow('Customer:', customerName, yPos);
-            yPos = drawFullWidthRow('Phone:', vehicle.customer?.phone || '', yPos);
 
-            yPos += 15;
+            const printHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vehicle Pickup Acknowledgement - ${vehicle.stockNumber}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.6in;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1e293b;
+            background: white;
+            font-size: 12px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 7.3in;
+            min-height: 9.8in;
+            padding: 0;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #1e293b;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .info-row {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-row.full-width {
+            grid-column: 1 / -1;
+        }
+        .info-label {
+            width: 120px;
+            min-width: 120px;
+            padding: 8px 12px;
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+            border-right: 1px solid #e2e8f0;
+        }
+        .info-value {
+            flex: 1;
+            padding: 8px 12px;
+            color: #1e293b;
+            background: white;
+        }
+        .terms-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .terms-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .terms-text {
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        .signature-section {
+            margin-top: 40px;
+        }
+        .signature-row {
+            display: flex;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .signature-block {
+            flex: 1;
+        }
+        .signature-line {
+            border-bottom: 1px solid #1e293b;
+            height: 30px;
+            margin-bottom: 4px;
+        }
+        .signature-label {
+            font-size: 10px;
+            color: #64748b;
+        }
+        .date-block {
+            width: 150px;
+        }
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 9px;
+            color: #94a3b8;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+        @media print {
+            body { background: white; }
+            .page { width: 100%; position: relative; min-height: 100vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <h1>Vehicle Pickup Acknowledgement</h1>
+            <div class="subtitle">Brandon Tomes Subaru Fleet Department</div>
+        </div>
 
-            // ============ ACKNOWLEDGEMENT & TERMS SECTION ============
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Acknowledgement & Terms of Vehicle Pickup', margin, yPos);
-            yPos += 8;
+        <!-- Vehicle Information -->
+        <div class="section">
+            <div class="section-title">Vehicle Information</div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <div class="info-label">Stock #</div>
+                    <div class="info-value">${vehicle.stockNumber || ''}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">VIN</div>
+                    <div class="info-value">${vehicle.vin || ''}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Year</div>
+                    <div class="info-value">${vehicle.year || ''}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Make</div>
+                    <div class="info-value">${vehicle.make || ''}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Model</div>
+                    <div class="info-value">${vehicle.model || ''}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Trim</div>
+                    <div class="info-value">${vehicle.trim || ''}</div>
+                </div>
+                <div class="info-row full-width">
+                    <div class="info-label">Color</div>
+                    <div class="info-value">${vehicle.color || ''}</div>
+                </div>
+            </div>
+        </div>
 
-            const acknowledgementText = 'By signing below, the undersigned acknowledges receipt and acceptance of the vehicle described above. The vehicle has been inspected and is accepted in its present condition unless otherwise documented at time of delivery. Responsibility for the vehicle, including risk of loss or damage, transfers to the receiving party upon possession. Brandon Tomes Subaru Fleet Department is not responsible for personal property left in the vehicle after delivery.';
+        <!-- Company & Customer Information -->
+        <div class="section">
+            <div class="section-title">Company & Customer Information</div>
+            <div class="info-grid">
+                <div class="info-row full-width">
+                    <div class="info-label">Fleet Company</div>
+                    <div class="info-value">${vehicle.fleetCompany || ''}</div>
+                </div>
+                <div class="info-row full-width">
+                    <div class="info-label">Operation Co.</div>
+                    <div class="info-value">${vehicle.operationCompany || ''}</div>
+                </div>
+                <div class="info-row full-width">
+                    <div class="info-label">Customer</div>
+                    <div class="info-value">${customerName}</div>
+                </div>
+                <div class="info-row full-width">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">${vehicle.customer?.phone || ''}</div>
+                </div>
+            </div>
+        </div>
 
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(60, 60, 60);
-            const splitAcknowledgement = doc.splitTextToSize(acknowledgementText, contentWidth);
-            doc.text(splitAcknowledgement, margin, yPos);
-            yPos += splitAcknowledgement.length * 4.5 + 20;
+        <!-- Acknowledgement & Terms -->
+        <div class="section">
+            <div class="terms-box">
+                <div class="terms-title">Acknowledgement & Terms of Vehicle Pickup</div>
+                <div class="terms-text">
+                    By signing below, the undersigned acknowledges receipt and acceptance of the vehicle described above. 
+                    The vehicle has been inspected and is accepted in its present condition unless otherwise documented at time of delivery. 
+                    Responsibility for the vehicle, including risk of loss or damage, transfers to the receiving party upon possession. 
+                    Brandon Tomes Subaru Fleet Department is not responsible for personal property left in the vehicle after delivery.
+                </div>
+            </div>
+        </div>
 
-            // ============ SIGNATURE SECTION ============
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(0, 0, 0);
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Customer Signature</div>
+                </div>
+                <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Print Name</div>
+                </div>
+                <div class="date-block">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Date</div>
+                </div>
+            </div>
+            <div class="signature-row">
+                <div class="signature-block">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Dealer Representative</div>
+                </div>
+                <div class="date-block">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Date</div>
+                </div>
+            </div>
+        </div>
 
-            doc.text('Customer Signature:', margin, yPos);
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.5);
-            doc.line(margin + 40, yPos, pageWidth - 80, yPos);
+        <!-- Footer -->
+        <div class="footer">
+            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} | Brandon Tomes Subaru Fleet Department
+        </div>
+    </div>
 
-            doc.text('Date:', pageWidth - 70, yPos);
-            doc.line(pageWidth - 55, yPos, pageWidth - margin, yPos);
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>`;
 
-            // ============ FOOTER ============
-            doc.setFontSize(7);
-            doc.setTextColor(150, 150, 150);
-            doc.setFont('helvetica', 'italic');
-            const footerText = `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
-            doc.text(footerText, pageWidth / 2, pageHeight - 10, { align: 'center' });
-
-            // Save the PDF
-            const fileName = `Vehicle_Pickup_Acknowledgement_${vehicle.stockNumber}_${vehicle.year}_${vehicle.make}_${vehicle.model}.pdf`.replace(/\s+/g, '_');
-            doc.save(fileName);
+            // Open in new window and print
+            const printWindow = window.open('', '_blank', 'width=850,height=1100');
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
         } catch (error) {
             console.error('Error generating PDF:', error);
             alert('Failed to generate PDF. Please try again.');
