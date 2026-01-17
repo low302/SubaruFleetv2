@@ -347,7 +347,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     <style>
         @page {
             size: letter;
-            margin: 0.6in;
+            margin: 0.4in;
         }
         * {
             margin: 0;
@@ -357,133 +357,240 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: #1e293b;
-            background: white;
+            background: #f1f5f9;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.5;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         .page {
-            width: 7.3in;
-            min-height: 9.8in;
+            width: 7.7in;
+            min-height: 10.2in;
             padding: 0;
             margin: 0 auto;
+            background: white;
         }
+        
+        /* Header with gradient */
         .header {
-            text-align: center;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #1e293b;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
+            color: white;
+            padding: 28px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .header h1 {
-            font-size: 22px;
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .header-left .subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .header-right .company {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .header-right .dept {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+        
+        /* Content area */
+        .content {
+            padding: 24px 32px;
+        }
+        
+        /* Vehicle Hero Card */
+        .vehicle-hero {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .vehicle-hero-title {
+            font-size: 20px;
             font-weight: 700;
             color: #1e293b;
             margin-bottom: 4px;
         }
-        .header .subtitle {
+        .vehicle-hero-subtitle {
             font-size: 13px;
             color: #64748b;
+            display: flex;
+            gap: 16px;
         }
-        .section {
+        .vehicle-hero-subtitle span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+        
+        /* Info Cards */
+        .cards-row {
+            display: flex;
+            gap: 16px;
             margin-bottom: 20px;
         }
-        .section-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 8px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
+        .info-card {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
             overflow: hidden;
         }
-        .info-row {
-            display: flex;
+        .info-card-header {
+            background: #f8fafc;
+            padding: 10px 16px;
             border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 12px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .info-row:last-child {
+        .info-card-body {
+            padding: 12px 16px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-item:last-child {
             border-bottom: none;
         }
-        .info-row.full-width {
-            grid-column: 1 / -1;
+        .info-item-label {
+            color: #64748b;
+            font-size: 11px;
         }
-        .info-label {
-            width: 120px;
-            min-width: 120px;
-            padding: 8px 12px;
-            background: #f1f5f9;
-            font-weight: 600;
-            color: #475569;
-            border-right: 1px solid #e2e8f0;
-        }
-        .info-value {
-            flex: 1;
-            padding: 8px 12px;
+        .info-item-value {
             color: #1e293b;
-            background: white;
+            font-weight: 500;
+            font-size: 12px;
+            text-align: right;
         }
-        .terms-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 16px;
-            margin-top: 8px;
+        .info-item-value.highlight {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        
+        /* Terms Section */
+        .terms-section {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .terms-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .terms-icon {
+            width: 20px;
+            height: 20px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
         }
         .terms-title {
             font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 8px;
+            color: #92400e;
+            font-size: 13px;
         }
         .terms-text {
             font-size: 11px;
-            color: #475569;
-            line-height: 1.6;
-            text-align: justify;
+            color: #78350f;
+            line-height: 1.7;
         }
+        
+        /* Signature Section */
         .signature-section {
-            margin-top: 40px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
         }
-        .signature-row {
-            display: flex;
-            gap: 40px;
-            margin-top: 30px;
+        .signature-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
         }
-        .signature-block {
-            flex: 1;
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .signature-grid.two-col {
+            grid-template-columns: 2fr 1fr;
+        }
+        .signature-field {
         }
         .signature-line {
-            border-bottom: 1px solid #1e293b;
-            height: 30px;
-            margin-bottom: 4px;
+            height: 32px;
+            border-bottom: 2px solid #cbd5e1;
+            margin-bottom: 6px;
         }
         .signature-label {
             font-size: 10px;
             color: #64748b;
+            font-weight: 500;
         }
-        .date-block {
-            width: 150px;
-        }
+        
+        /* Footer */
         .footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 9px;
-            color: #94a3b8;
-            padding-top: 12px;
+            padding: 16px 32px;
+            background: #f8fafc;
             border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .footer-left {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .footer-right {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
         @media print {
             body { background: white; }
-            .page { width: 100%; position: relative; min-height: 100vh; }
+            .page { width: 100%; box-shadow: none; }
         }
     </style>
 </head>
@@ -491,72 +598,92 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
     <div class="page">
         <!-- Header -->
         <div class="header">
-            <h1>Vehicle Pickup Acknowledgement</h1>
-            <div class="subtitle">Brandon Tomes Subaru Fleet Department</div>
-        </div>
-
-        <!-- Vehicle Information -->
-        <div class="section">
-            <div class="section-title">Vehicle Information</div>
-            <div class="info-grid">
-                <div class="info-row">
-                    <div class="info-label">Stock #</div>
-                    <div class="info-value">${vehicle.stockNumber || ''}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">VIN</div>
-                    <div class="info-value">${vehicle.vin || ''}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Year</div>
-                    <div class="info-value">${vehicle.year || ''}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Make</div>
-                    <div class="info-value">${vehicle.make || ''}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Model</div>
-                    <div class="info-value">${vehicle.model || ''}</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Trim</div>
-                    <div class="info-value">${vehicle.trim || ''}</div>
-                </div>
-                <div class="info-row full-width">
-                    <div class="info-label">Color</div>
-                    <div class="info-value">${vehicle.color || ''}</div>
-                </div>
+            <div class="header-left">
+                <h1>Vehicle Pickup Acknowledgement</h1>
+                <div class="subtitle">Official Delivery Documentation</div>
+            </div>
+            <div class="header-right">
+                <div class="company">Brandon Tomes Subaru</div>
+                <div class="dept">Fleet Department</div>
             </div>
         </div>
 
-        <!-- Company & Customer Information -->
-        <div class="section">
-            <div class="section-title">Company & Customer Information</div>
-            <div class="info-grid">
-                <div class="info-row full-width">
-                    <div class="info-label">Fleet Company</div>
-                    <div class="info-value">${vehicle.fleetCompany || ''}</div>
+        <div class="content">
+            <!-- Vehicle Hero -->
+            <div class="vehicle-hero">
+                <div class="vehicle-hero-title">
+                    ${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim || ''}
+                    <span class="badge">${vehicle.color || 'N/A'}</span>
                 </div>
-                <div class="info-row full-width">
-                    <div class="info-label">Operation Co.</div>
-                    <div class="info-value">${vehicle.operationCompany || ''}</div>
-                </div>
-                <div class="info-row full-width">
-                    <div class="info-label">Customer</div>
-                    <div class="info-value">${customerName}</div>
-                </div>
-                <div class="info-row full-width">
-                    <div class="info-label">Phone</div>
-                    <div class="info-value">${vehicle.customer?.phone || ''}</div>
+                <div class="vehicle-hero-subtitle">
+                    <span><strong>Stock:</strong> ${vehicle.stockNumber}</span>
+                    <span><strong>VIN:</strong> ${vehicle.vin}</span>
                 </div>
             </div>
-        </div>
 
-        <!-- Acknowledgement & Terms -->
-        <div class="section">
-            <div class="terms-box">
-                <div class="terms-title">Acknowledgement & Terms of Vehicle Pickup</div>
+            <!-- Info Cards Row -->
+            <div class="cards-row">
+                <!-- Vehicle Details Card -->
+                <div class="info-card">
+                    <div class="info-card-header">Vehicle Details</div>
+                    <div class="info-card-body">
+                        <div class="info-item">
+                            <span class="info-item-label">Stock Number</span>
+                            <span class="info-item-value highlight">${vehicle.stockNumber || ''}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">VIN</span>
+                            <span class="info-item-value">${vehicle.vin || ''}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Year / Make / Model</span>
+                            <span class="info-item-value">${vehicle.year} ${vehicle.make} ${vehicle.model}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Trim</span>
+                            <span class="info-item-value">${vehicle.trim || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Exterior Color</span>
+                            <span class="info-item-value">${vehicle.color || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Details Card -->
+                <div class="info-card">
+                    <div class="info-card-header">Customer & Company</div>
+                    <div class="info-card-body">
+                        <div class="info-item">
+                            <span class="info-item-label">Fleet Company</span>
+                            <span class="info-item-value">${vehicle.fleetCompany || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Operation Company</span>
+                            <span class="info-item-value">${vehicle.operationCompany || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Customer Name</span>
+                            <span class="info-item-value highlight">${customerName || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Phone Number</span>
+                            <span class="info-item-value">${vehicle.customer?.phone || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-item-label">Email</span>
+                            <span class="info-item-value">${vehicle.customer?.email || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms Section -->
+            <div class="terms-section">
+                <div class="terms-header">
+                    <div class="terms-icon">!</div>
+                    <div class="terms-title">Acknowledgement & Terms of Vehicle Pickup</div>
+                </div>
                 <div class="terms-text">
                     By signing below, the undersigned acknowledges receipt and acceptance of the vehicle described above. 
                     The vehicle has been inspected and is accepted in its present condition unless otherwise documented at time of delivery. 
@@ -564,39 +691,47 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                     Brandon Tomes Subaru Fleet Department is not responsible for personal property left in the vehicle after delivery.
                 </div>
             </div>
-        </div>
 
-        <!-- Signature Section -->
-        <div class="signature-section">
-            <div class="signature-row">
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Customer Signature</div>
+            <!-- Signature Section -->
+            <div class="signature-section">
+                <div class="signature-title">Signatures</div>
+                
+                <div class="signature-grid">
+                    <div class="signature-field">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Customer Signature</div>
+                    </div>
+                    <div class="signature-field">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Printed Name</div>
+                    </div>
+                    <div class="signature-field">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Date</div>
+                    </div>
                 </div>
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Print Name</div>
-                </div>
-                <div class="date-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Date</div>
-                </div>
-            </div>
-            <div class="signature-row">
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Dealer Representative</div>
-                </div>
-                <div class="date-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Date</div>
+                
+                <div class="signature-grid two-col">
+                    <div class="signature-field">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Dealer Representative Signature</div>
+                    </div>
+                    <div class="signature-field">
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Date</div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} | Brandon Tomes Subaru Fleet Department
+            <div class="footer-left">
+                Document generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+            </div>
+            <div class="footer-right">
+                Brandon Tomes Subaru Fleet Department • McKinney, TX
+            </div>
         </div>
     </div>
 
