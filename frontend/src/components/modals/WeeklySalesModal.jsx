@@ -81,12 +81,24 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
     const exportToPDF = () => {
         // Calculate summary stats
         const avgSaleAmount = sales.length > 0 ? totalAmount / sales.length : 0;
-        const makeBreakdown = {};
+
+        // Sales by Model breakdown
+        const modelBreakdown = {};
         sales.forEach(v => {
-            makeBreakdown[v.make] = (makeBreakdown[v.make] || 0) + 1;
+            const model = v.model || 'Unknown';
+            modelBreakdown[model] = (modelBreakdown[model] || 0) + 1;
         });
-        const topMakes = Object.entries(makeBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const maxMakeCount = Math.max(...topMakes.map(m => m[1]), 1);
+        const topModels = Object.entries(modelBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const maxModelCount = Math.max(...topModels.map(m => m[1]), 1);
+
+        // Sales by Fleet Company breakdown
+        const fleetBreakdown = {};
+        sales.forEach(v => {
+            const fleet = v.fleetCompany || 'No Fleet';
+            fleetBreakdown[fleet] = (fleetBreakdown[fleet] || 0) + 1;
+        });
+        const topFleets = Object.entries(fleetBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const maxFleetCount = Math.max(...topFleets.map(m => m[1]), 1);
 
         // Generate table rows HTML
         const tableRows = sales.map((v, index) => `
@@ -99,13 +111,25 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
             </tr>
         `).join('');
 
-        // Generate bar chart HTML
-        const barChartHTML = topMakes.map(([make, count]) => `
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <div style="width: 80px; font-size: 12px; color: #64748b; text-align: right;">${make}</div>
-                <div style="flex: 1; height: 24px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                    <div style="width: ${(count / maxMakeCount) * 100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
-                        <span style="color: white; font-size: 11px; font-weight: 600;">${count}</span>
+        // Generate bar chart HTML for Models
+        const modelChartHTML = topModels.map(([model, count]) => `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="width: 100px; font-size: 11px; color: #64748b; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${model}</div>
+                <div style="flex: 1; height: 20px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${(count / maxModelCount) * 100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                        <span style="color: white; font-size: 10px; font-weight: 600;">${count}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Generate bar chart HTML for Fleet Companies
+        const fleetChartHTML = topFleets.map(([fleet, count]) => `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="width: 100px; font-size: 11px; color: #64748b; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fleet}</div>
+                <div style="flex: 1; height: 20px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${(count / maxFleetCount) * 100}%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #7c3aed); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                        <span style="color: white; font-size: 10px; font-weight: 600;">${count}</span>
                     </div>
                 </div>
             </div>
@@ -298,13 +322,21 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
             </div>
         </div>
 
-        <!-- Sales by Make Chart -->
-        ${topMakes.length > 0 ? `
-        <div class="section">
-            <div class="section-title">Sales by Make</div>
-            ${barChartHTML}
+        <!-- Volume Breakdown Charts -->
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+            ${topModels.length > 0 ? `
+            <div class="section" style="flex: 1; margin-bottom: 0;">
+                <div class="section-title">Sales by Model</div>
+                ${modelChartHTML}
+            </div>
+            ` : ''}
+            ${topFleets.length > 0 ? `
+            <div class="section" style="flex: 1; margin-bottom: 0;">
+                <div class="section-title">Sales by Fleet Company</div>
+                ${fleetChartHTML}
+            </div>
+            ` : ''}
         </div>
-        ` : ''}
 
         <!-- Sales Table -->
         <div class="table-container">
