@@ -619,18 +619,51 @@ app.post('/api/inventory/fix-intransit-dates', isAuthenticated, (req, res) => {
 
 // ==================== SOLD VEHICLES ROUTES ====================
 
-// Get all sold vehicles
+// Get all sold vehicles (with trade-in data joined)
 app.get('/api/sold-vehicles', isAuthenticated, (req, res) => {
-    db.all('SELECT * FROM sold_vehicles ORDER BY created_at DESC', [], (err, rows) => {
+    const sql = `
+        SELECT sv.*, 
+               t.id as trade_id, t.stockNumber as trade_stockNumber, t.vin as trade_vin,
+               t.year as trade_year, t.make as trade_make, t.model as trade_model,
+               t.trim as trade_trim, t.color as trade_color, t.mileage as trade_mileage
+        FROM sold_vehicles sv
+        LEFT JOIN trade_ins t ON sv.tradeInId = t.id
+        ORDER BY sv.created_at DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
         if (err) {
             console.error('Error fetching sold vehicles:', err);
             return res.status(500).json({ error: err.message });
         }
-        const soldVehicles = rows.map(row => ({
-            ...row,
-            customer: row.customer ? JSON.parse(row.customer) : null,
-            documents: row.documents ? JSON.parse(row.documents) : []
-        }));
+        const soldVehicles = rows.map(row => {
+            // Build trade-in object if exists
+            let tradeIn = null;
+            if (row.trade_id) {
+                tradeIn = {
+                    id: row.trade_id,
+                    stockNumber: row.trade_stockNumber,
+                    vin: row.trade_vin,
+                    year: row.trade_year,
+                    make: row.trade_make,
+                    model: row.trade_model,
+                    trim: row.trade_trim,
+                    color: row.trade_color,
+                    mileage: row.trade_mileage
+                };
+            }
+
+            // Remove trade_ prefixed fields from base object
+            const { trade_id, trade_stockNumber, trade_vin, trade_year, trade_make,
+                trade_model, trade_trim, trade_color, trade_mileage, ...vehicleData } = row;
+
+            return {
+                ...vehicleData,
+                customer: row.customer ? JSON.parse(row.customer) : null,
+                documents: row.documents ? JSON.parse(row.documents) : [],
+                tradeIn: tradeIn
+            };
+        });
         res.json(soldVehicles);
     });
 });
