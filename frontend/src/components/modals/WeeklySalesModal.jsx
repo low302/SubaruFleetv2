@@ -18,7 +18,9 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
 
     const getSaleDate = (vehicle) => {
         if (vehicle.customer?.saleDate) {
-            const date = new Date(vehicle.customer.saleDate);
+            // Append T00:00:00 to parse as local time, not UTC
+            const dateStr = vehicle.customer.saleDate;
+            const date = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
             if (!isNaN(date.getTime())) {
                 return date.toLocaleDateString();
             }

@@ -49,7 +49,13 @@ export default function Dashboard() {
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const startOfYear = new Date(today.getFullYear(), 0, 1);
 
-            const getSaleDate = (v) => v.customer?.saleDate ? new Date(v.customer.saleDate) : new Date(v.created_at);
+            const getSaleDate = (v) => {
+                if (v.customer?.saleDate) {
+                    const dateStr = v.customer.saleDate;
+                    return new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+                }
+                return new Date(v.created_at);
+            };
 
             const soldMTD = soldData.filter((v) => {
                 const saleDate = getSaleDate(v);

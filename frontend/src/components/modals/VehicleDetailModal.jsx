@@ -802,7 +802,7 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                                 {vehicle.customer.saleDate && (
                                                     <div>
                                                         <span className="text-slate-500">Date:</span>{' '}
-                                                        <span className="text-slate-200">{new Date(vehicle.customer.saleDate).toLocaleDateString()}</span>
+                                                        <span className="text-slate-200">{new Date(vehicle.customer.saleDate + 'T00:00:00').toLocaleDateString()}</span>
                                                     </div>
                                                 )}
                                                 {vehicle.customer.paymentMethod && (

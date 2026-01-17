@@ -33,6 +33,12 @@ export default function Payments() {
         }
     };
 
+    // Helper to parse sale date as local time (not UTC)
+    const parseSaleDate = (dateStr) => {
+        if (!dateStr) return null;
+        return new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+    };
+
     // Filter vehicles that have payment data
     const paymentsData = useMemo(() => {
         return vehicles.filter(v =>
@@ -45,7 +51,7 @@ export default function Payments() {
     // Get unique years from sale dates
     const years = useMemo(() => {
         const uniqueYears = [...new Set(paymentsData.map(v => {
-            if (v.customer?.saleDate) return new Date(v.customer.saleDate).getFullYear();
+            if (v.customer?.saleDate) return parseSaleDate(v.customer.saleDate).getFullYear();
             return null;
         }).filter(Boolean))].sort((a, b) => b - a);
         return uniqueYears;
@@ -72,7 +78,7 @@ export default function Payments() {
         if (monthFilter || yearFilter) {
             result = result.filter(v => {
                 if (!v.customer?.saleDate) return false;
-                const saleDate = new Date(v.customer.saleDate);
+                const saleDate = parseSaleDate(v.customer.saleDate);
                 if (yearFilter && saleDate.getFullYear().toString() !== yearFilter) return false;
                 if (monthFilter && (saleDate.getMonth() + 1).toString() !== monthFilter) return false;
                 return true;
@@ -86,8 +92,8 @@ export default function Payments() {
 
         // Sort by sale date - newest first
         result = result.sort((a, b) => {
-            const dateA = new Date(a.customer?.saleDate || 0);
-            const dateB = new Date(b.customer?.saleDate || 0);
+            const dateA = a.customer?.saleDate ? parseSaleDate(a.customer.saleDate) : new Date(0);
+            const dateB = b.customer?.saleDate ? parseSaleDate(b.customer.saleDate) : new Date(0);
             return dateB - dateA;
         });
 
@@ -103,7 +109,7 @@ export default function Payments() {
         // Current month payments
         const currentMonthPayments = paymentsData.filter(v => {
             if (!v.customer?.saleDate) return false;
-            const saleDate = new Date(v.customer.saleDate);
+            const saleDate = parseSaleDate(v.customer.saleDate);
             return saleDate.getFullYear() === currentYear && saleDate.getMonth() === currentMonth;
         });
         const currentMonthTotal = currentMonthPayments.reduce((sum, v) => sum + (parseFloat(v.customer?.saleAmount) || 0), 0);
@@ -114,7 +120,7 @@ export default function Payments() {
         const prevMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
         const prevMonthPayments = paymentsData.filter(v => {
             if (!v.customer?.saleDate) return false;
-            const saleDate = new Date(v.customer.saleDate);
+            const saleDate = parseSaleDate(v.customer.saleDate);
             return saleDate.getFullYear() === prevMonthYear && saleDate.getMonth() === prevMonth;
         });
         const prevMonthTotal = prevMonthPayments.reduce((sum, v) => sum + (parseFloat(v.customer?.saleAmount) || 0), 0);
@@ -127,7 +133,7 @@ export default function Payments() {
         // Current year YTD
         const currentYearPayments = paymentsData.filter(v => {
             if (!v.customer?.saleDate) return false;
-            return new Date(v.customer.saleDate).getFullYear() === currentYear;
+            return parseSaleDate(v.customer.saleDate).getFullYear() === currentYear;
         });
         const currentYearTotal = currentYearPayments.reduce((sum, v) => sum + (parseFloat(v.customer?.saleAmount) || 0), 0);
         const currentYearCount = currentYearPayments.length;
@@ -135,7 +141,7 @@ export default function Payments() {
         // Previous year
         const prevYearPayments = paymentsData.filter(v => {
             if (!v.customer?.saleDate) return false;
-            return new Date(v.customer.saleDate).getFullYear() === currentYear - 1;
+            return parseSaleDate(v.customer.saleDate).getFullYear() === currentYear - 1;
         });
         const prevYearTotal = prevYearPayments.reduce((sum, v) => sum + (parseFloat(v.customer?.saleAmount) || 0), 0);
         const prevYearCount = prevYearPayments.length;
@@ -184,7 +190,7 @@ export default function Payments() {
             { key: 'stockNumber', label: 'Stock #' },
             { key: 'vehicle', label: 'Vehicle', getValue: v => `${v.year} ${v.make} ${v.model}` },
             { key: 'customer', label: 'Customer', getValue: v => `${v.customer?.firstName || ''} ${v.customer?.lastName || ''}`.trim() },
-            { key: 'saleDate', label: 'Sale Date', getValue: v => v.customer?.saleDate ? new Date(v.customer.saleDate).toLocaleDateString() : '' },
+            { key: 'saleDate', label: 'Sale Date', getValue: v => v.customer?.saleDate ? parseSaleDate(v.customer.saleDate).toLocaleDateString() : '' },
             { key: 'amount', label: 'Amount', getValue: v => v.customer?.saleAmount || '' },
             { key: 'method', label: 'Payment Method', getValue: v => v.customer?.paymentMethod || '' },
             { key: 'reference', label: 'Reference', getValue: v => v.customer?.paymentReference || '' },
@@ -420,7 +426,7 @@ export default function Payments() {
                             ) : (
                                 filteredPayments.map((vehicle) => {
                                     const customerName = `${vehicle.customer?.firstName || ''} ${vehicle.customer?.lastName || ''}`.trim() || 'N/A';
-                                    const saleDate = vehicle.customer?.saleDate ? new Date(vehicle.customer.saleDate).toLocaleDateString() : 'N/A';
+                                    const saleDate = vehicle.customer?.saleDate ? parseSaleDate(vehicle.customer.saleDate).toLocaleDateString() : 'N/A';
                                     const saleAmount = parseFloat(vehicle.customer?.saleAmount) || 0;
                                     const paymentMethod = vehicle.customer?.paymentMethod || 'N/A';
                                     const paymentRef = vehicle.customer?.paymentReference || 'N/A';

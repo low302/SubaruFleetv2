@@ -45,7 +45,9 @@ export default function SoldVehicles() {
     // Get sale date from customer object
     const getSaleDate = (vehicle) => {
         if (vehicle.customer?.saleDate) {
-            const date = new Date(vehicle.customer.saleDate);
+            // Parse as local time by appending T00:00:00
+            const dateStr = vehicle.customer.saleDate;
+            const date = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
             if (!isNaN(date.getTime())) {
                 return date.toLocaleDateString();
             }
@@ -63,7 +65,8 @@ export default function SoldVehicles() {
     // Get raw sale date for sorting/filtering
     const getRawSaleDate = (vehicle) => {
         if (vehicle.customer?.saleDate) {
-            return new Date(vehicle.customer.saleDate);
+            const dateStr = vehicle.customer.saleDate;
+            return new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
         }
         if (vehicle.dateAdded) {
             return new Date(vehicle.dateAdded);
