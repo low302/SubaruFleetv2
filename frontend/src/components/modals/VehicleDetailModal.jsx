@@ -724,6 +724,462 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
         }
     };
 
+    // Generate Deal Sheet PDF
+    const generateDealSheet = async () => {
+        if (!vehicle) return;
+
+        setIsGeneratingPDF(true);
+        try {
+            const customerName = vehicle.customer
+                ? vehicle.customer.name || `${vehicle.customer.firstName || ''} ${vehicle.customer.lastName || ''}`.trim() || ''
+                : '';
+
+            // Calculate age of unit
+            const inStockDate = vehicle.inStockDate ? new Date(vehicle.inStockDate.includes('T') ? vehicle.inStockDate : vehicle.inStockDate + 'T00:00:00') : null;
+            const saleDate = vehicle.customer?.saleDate ? new Date(vehicle.customer.saleDate.includes('T') ? vehicle.customer.saleDate : vehicle.customer.saleDate + 'T00:00:00') : null;
+            let ageOfUnit = '—';
+            if (inStockDate && saleDate) {
+                const diffTime = Math.abs(saleDate - inStockDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                ageOfUnit = `${diffDays} days`;
+            }
+
+            const formatDate = (dateStr) => {
+                if (!dateStr) return '—';
+                const date = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+                return date.toLocaleDateString();
+            };
+
+            const formatCurrency = (amount) => {
+                if (!amount) return '—';
+                return '$' + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            };
+
+            // Trade-in info
+            const tradeIn = vehicle.tradeIn || {};
+            const hasTradeIn = tradeIn.vin || tradeIn.year || tradeIn.make || tradeIn.model;
+
+            const printHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Deal Sheet - ${vehicle.stockNumber}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.4in;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1e293b;
+            background: white;
+            font-size: 11px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 7.7in;
+            min-height: 10.2in;
+            padding: 0;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px solid #1e40af;
+        }
+        .header img {
+            height: 70px;
+            width: auto;
+        }
+        
+        /* Title Bar */
+        .title-bar {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title-bar h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .title-bar .stock-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        /* Content */
+        .content {
+            padding: 20px 28px;
+        }
+        
+        /* Section */
+        .section {
+            margin-bottom: 16px;
+        }
+        .section-header {
+            background: #f1f5f9;
+            padding: 8px 14px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid #e2e8f0;
+            border-bottom: none;
+        }
+        .section-body {
+            border: 1px solid #e2e8f0;
+            border-radius: 0 0 6px 6px;
+            padding: 12px 14px;
+            background: white;
+        }
+        
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .info-grid.two-col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 2px;
+        }
+        .info-value {
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        .info-value.highlight {
+            color: #1e40af;
+            font-weight: 700;
+        }
+        .info-value.large {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .highlight-box .label {
+            font-size: 12px;
+            color: #065f46;
+            font-weight: 500;
+        }
+        .highlight-box .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #047857;
+        }
+        
+        /* Trade-in Section */
+        .trade-section {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .trade-header {
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .no-trade {
+            color: #64748b;
+            font-style: italic;
+            font-size: 11px;
+        }
+        
+        /* Summary Row */
+        .summary-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .summary-card {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .summary-card .label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .summary-card .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .summary-card.primary {
+            background: #1e40af;
+            border-color: #1e40af;
+        }
+        .summary-card.primary .label,
+        .summary-card.primary .value {
+            color: white;
+        }
+        
+        /* Footer */
+        .footer {
+            padding: 14px 28px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+        
+        @media print {
+            body { background: white; }
+            .page { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header with Logo -->
+        <div class="header">
+            <img src="https://di-uploads-development.dealerinspire.com/brandontomessubaru/uploads/2022/09/logo-desktop-600x200.png" alt="Brandon Tomes Subaru" />
+        </div>
+
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>Deal Sheet</h1>
+            <span class="stock-badge">Stock #${vehicle.stockNumber}</span>
+        </div>
+
+        <div class="content">
+            <!-- Sale Amount Highlight -->
+            <div class="highlight-box">
+                <span class="label">Total Sale Amount</span>
+                <span class="value">${formatCurrency(vehicle.customer?.saleAmount)}</span>
+            </div>
+
+            <!-- Quick Summary -->
+            <div class="summary-row">
+                <div class="summary-card primary">
+                    <div class="label">Age of Unit</div>
+                    <div class="value">${ageOfUnit}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">In Stock Date</div>
+                    <div class="value">${formatDate(vehicle.inStockDate)}</div>
+                </div>
+                <div class="summary-card">
+                    <div class="label">Sale Date</div>
+                    <div class="value">${formatDate(vehicle.customer?.saleDate)}</div>
+                </div>
+            </div>
+
+            <!-- Vehicle Information -->
+            <div class="section">
+                <div class="section-header">Vehicle Information</div>
+                <div class="section-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Stock Number</span>
+                            <span class="info-value highlight">${vehicle.stockNumber || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">VIN</span>
+                            <span class="info-value">${vehicle.vin || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year</span>
+                            <span class="info-value">${vehicle.year || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Make</span>
+                            <span class="info-value">${vehicle.make || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Model</span>
+                            <span class="info-value">${vehicle.model || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Trim</span>
+                            <span class="info-value">${vehicle.trim || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Exterior Color</span>
+                            <span class="info-value">${vehicle.color || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="section">
+                <div class="section-header">Customer Information</div>
+                <div class="section-body">
+                    <div class="info-grid two-col">
+                        <div class="info-item">
+                            <span class="info-label">Customer Name</span>
+                            <span class="info-value highlight">${customerName || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone</span>
+                            <span class="info-value">${vehicle.customer?.phone || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">${vehicle.customer?.email || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fleet & Operating Company -->
+            <div class="section">
+                <div class="section-header">Fleet & Operating Company</div>
+                <div class="section-body">
+                    <div class="info-grid two-col">
+                        <div class="info-item">
+                            <span class="info-label">Fleet Company</span>
+                            <span class="info-value">${vehicle.fleetCompany || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Operating Company</span>
+                            <span class="info-value">${vehicle.operationCompany || '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="section">
+                <div class="section-header">Payment Information</div>
+                <div class="section-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Sale Amount</span>
+                            <span class="info-value large highlight">${formatCurrency(vehicle.customer?.saleAmount)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Payment Method</span>
+                            <span class="info-value">${vehicle.customer?.paymentMethod || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Payment Reference</span>
+                            <span class="info-value">${vehicle.customer?.paymentReference || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Sale Date</span>
+                            <span class="info-value">${formatDate(vehicle.customer?.saleDate)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade-In Information -->
+            <div class="section">
+                <div class="trade-section">
+                    <div class="trade-header">Trade-In Information</div>
+                    ${hasTradeIn ? `
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Trade VIN</span>
+                            <span class="info-value">${tradeIn.vin || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year</span>
+                            <span class="info-value">${tradeIn.year || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Make</span>
+                            <span class="info-value">${tradeIn.make || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Model</span>
+                            <span class="info-value">${tradeIn.model || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Color</span>
+                            <span class="info-value">${tradeIn.color || '—'}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Mileage</span>
+                            <span class="info-value">${tradeIn.mileage ? tradeIn.mileage.toLocaleString() + ' mi' : '—'}</span>
+                        </div>
+                    </div>
+                    ` : '<p class="no-trade">No trade-in for this deal</p>'}
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span>Generated on ${new Date().toLocaleString()}</span>
+            <span>Brandon Tomes Subaru Fleet Department • McKinney, TX</span>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>`;
+
+            // Open in new window and print
+            const printWindow = window.open('', '_blank', 'width=850,height=1100');
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+        } catch (error) {
+            console.error('Error generating Deal Sheet:', error);
+            alert('Failed to generate Deal Sheet. Please try again.');
+        } finally {
+            setIsGeneratingPDF(false);
+        }
+    };
+
     const tabs = [
         { id: 'details', label: 'Details', icon: FileText },
         { id: 'customer', label: 'Customer', icon: User },
@@ -1306,6 +1762,12 @@ export default function VehicleDetailModal({ vehicle, isOpen, onClose, onUpdate 
                                     <Printer className="h-4 w-4" />
                                     {isGeneratingPDF ? 'Generating...' : 'Print'}
                                 </Button>
+                                {vehicle?.status === 'sold' && (
+                                    <Button variant="secondary" onClick={generateDealSheet} disabled={isGeneratingPDF}>
+                                        <FileText className="h-4 w-4" />
+                                        Deal Sheet
+                                    </Button>
+                                )}
                                 {activeTab === 'details' && (
                                     isEditing ? (
                                         <>
