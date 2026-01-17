@@ -1,10 +1,8 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { X, FileSpreadsheet, FileText } from 'lucide-react';
 import { Button } from '../ui/button';
 import { StatusBadge } from '../ui/badge';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) {
     if (!isOpen) return null;
@@ -81,209 +79,274 @@ export default function WeeklySalesModal({ isOpen, onClose, sales, dateRange }) 
     };
 
     const exportToPDF = () => {
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        // Colors (RGB values)
-        const primaryColor = [59, 130, 246];      // Blue
-        const successColor = [34, 197, 94];       // Green
-        const darkColor = [30, 41, 59];           // Slate-800
-        const lightBgColor = [241, 245, 249];     // Slate-100
-        const textColor = [51, 65, 85];           // Slate-700
-
-        // === HEADER SECTION ===
-        // Draw header background with gradient effect
-        doc.setFillColor(...primaryColor);
-        doc.rect(0, 0, pageWidth, 45, 'F');
-
-        // Add subtle pattern overlay
-        doc.setFillColor(255, 255, 255);
-        doc.setGlobalAlpha && doc.setGlobalAlpha(0.1);
-        for (let i = 0; i < 10; i++) {
-            doc.circle(pageWidth - 20 - (i * 15), 22, 30 + (i * 5), 'F');
-        }
-        doc.setGlobalAlpha && doc.setGlobalAlpha(1);
-
-        // Header text
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Weekly Sales Report', 14, 22);
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'normal');
-        doc.text(dateRange, 14, 32);
-
-        // Company branding
-        doc.setFontSize(10);
-        doc.text('Brandon Tomes Subaru', pageWidth - 14, 22, { align: 'right' });
-        doc.text('Fleet Department', pageWidth - 14, 30, { align: 'right' });
-
-        // === SUMMARY CARDS SECTION ===
-        const cardY = 55;
-        const cardHeight = 28;
-        const cardSpacing = 5;
-        const cardWidth = (pageWidth - 28 - (cardSpacing * 2)) / 3;
-
         // Calculate summary stats
         const avgSaleAmount = sales.length > 0 ? totalAmount / sales.length : 0;
         const makeBreakdown = {};
         sales.forEach(v => {
             makeBreakdown[v.make] = (makeBreakdown[v.make] || 0) + 1;
         });
+        const topMakes = Object.entries(makeBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const maxMakeCount = Math.max(...topMakes.map(m => m[1]), 1);
 
-        // Card 1: Total Revenue
-        doc.setFillColor(...successColor);
-        doc.roundedRect(14, cardY, cardWidth, cardHeight, 3, 3, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('TOTAL REVENUE', 14 + cardWidth / 2, cardY + 8, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14 + cardWidth / 2, cardY + 20, { align: 'center' });
+        // Generate table rows HTML
+        const tableRows = sales.map((v, index) => `
+            <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #3b82f6;">${v.stockNumber}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #334155;">${v.year} ${v.make} ${v.model}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${getCustomerName(v)}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${getSaleDate(v)}</td>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #059669;">$${getSaleAmount(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+            </tr>
+        `).join('');
 
-        // Card 2: Vehicles Sold
-        doc.setFillColor(...primaryColor);
-        doc.roundedRect(14 + cardWidth + cardSpacing, cardY, cardWidth, cardHeight, 3, 3, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('VEHICLES SOLD', 14 + cardWidth + cardSpacing + cardWidth / 2, cardY + 8, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${sales.length}`, 14 + cardWidth + cardSpacing + cardWidth / 2, cardY + 20, { align: 'center' });
+        // Generate bar chart HTML
+        const barChartHTML = topMakes.map(([make, count]) => `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                <div style="width: 80px; font-size: 12px; color: #64748b; text-align: right;">${make}</div>
+                <div style="flex: 1; height: 24px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${(count / maxMakeCount) * 100}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                        <span style="color: white; font-size: 11px; font-weight: 600;">${count}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
 
-        // Card 3: Average Sale
-        doc.setFillColor(...darkColor);
-        doc.roundedRect(14 + (cardWidth + cardSpacing) * 2, cardY, cardWidth, cardHeight, 3, 3, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('AVERAGE SALE', 14 + (cardWidth + cardSpacing) * 2 + cardWidth / 2, cardY + 8, { align: 'center' });
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`$${avgSaleAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 14 + (cardWidth + cardSpacing) * 2 + cardWidth / 2, cardY + 20, { align: 'center' });
+        const printHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Sales Report - ${dateRange}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.5in;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #1e293b;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 7.5in;
+            min-height: 10in;
+            padding: 0;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .header .branding {
+            text-align: right;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .header .branding .company {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-card.green {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+        }
+        .stat-card.blue {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+        }
+        .stat-card.slate {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%);
+            color: white;
+        }
+        .stat-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+        .stat-card .value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .section {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        thead tr {
+            background: #1e293b;
+        }
+        thead th {
+            padding: 12px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        thead th:last-child {
+            text-align: right;
+        }
+        .total-row {
+            background: linear-gradient(90deg, #059669, #10b981);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 0 0 10px 10px;
+            font-weight: 600;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        @media print {
+            body { background: white; }
+            .page { width: 100%; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>Weekly Sales Report</h1>
+                <div class="subtitle">${dateRange}</div>
+            </div>
+            <div class="branding">
+                <div class="company">Brandon Tomes Subaru</div>
+                <div>Fleet Department</div>
+            </div>
+        </div>
 
-        // === BAR CHART SECTION ===
-        const chartY = cardY + cardHeight + 12;
-        const chartHeight = 40;
-        const chartWidth = pageWidth - 28;
+        <!-- Stats Cards -->
+        <div class="stats-row">
+            <div class="stat-card green">
+                <div class="label">Total Revenue</div>
+                <div class="value">$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="label">Vehicles Sold</div>
+                <div class="value">${sales.length}</div>
+            </div>
+            <div class="stat-card slate">
+                <div class="label">Average Sale</div>
+                <div class="value">$${avgSaleAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            </div>
+        </div>
 
-        // Chart background
-        doc.setFillColor(...lightBgColor);
-        doc.roundedRect(14, chartY, chartWidth, chartHeight + 15, 3, 3, 'F');
+        <!-- Sales by Make Chart -->
+        ${topMakes.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Sales by Make</div>
+            ${barChartHTML}
+        </div>
+        ` : ''}
 
-        // Chart title
-        doc.setTextColor(...textColor);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Sales by Make', 20, chartY + 10);
+        <!-- Sales Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Stock #</th>
+                        <th>Vehicle</th>
+                        <th>Customer</th>
+                        <th>Sale Date</th>
+                        <th style="text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+            <div class="total-row">
+                <span>Total (${sales.length} sale${sales.length !== 1 ? 's' : ''})</span>
+                <span>$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+        </div>
 
-        // Draw bar chart
-        const makes = Object.entries(makeBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const maxCount = Math.max(...makes.map(m => m[1]), 1);
-        const barWidth = (chartWidth - 20) / Math.max(makes.length, 1);
-        const barMaxHeight = chartHeight - 10;
+        <!-- Footer -->
+        <div class="footer">
+            <span>Generated on ${new Date().toLocaleString()}</span>
+            <span>Brandon Tomes Subaru Fleet Department</span>
+        </div>
+    </div>
 
-        makes.forEach(([make, count], index) => {
-            const barHeight = (count / maxCount) * barMaxHeight;
-            const barX = 20 + (index * barWidth) + (barWidth * 0.1);
-            const barActualWidth = barWidth * 0.8;
-            const barY = chartY + chartHeight + 2 - barHeight;
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>`;
 
-            // Bar gradient effect
-            doc.setFillColor(...primaryColor);
-            doc.roundedRect(barX, barY, barActualWidth, barHeight, 2, 2, 'F');
-
-            // Count on top of bar
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...primaryColor);
-            doc.text(`${count}`, barX + barActualWidth / 2, barY - 2, { align: 'center' });
-
-            // Label below bar
-            doc.setFontSize(7);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...textColor);
-            const truncatedMake = make.length > 8 ? make.substring(0, 8) + '...' : make;
-            doc.text(truncatedMake, barX + barActualWidth / 2, chartY + chartHeight + 12, { align: 'center' });
-        });
-
-        // === DATA TABLE SECTION ===
-        const tableY = chartY + chartHeight + 25;
-
-        // Section header
-        doc.setFillColor(...darkColor);
-        doc.rect(14, tableY, chartWidth, 8, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Sales Details', 18, tableY + 5.5);
-
-        // Table data
-        const tableData = sales.map(v => [
-            v.stockNumber,
-            `${v.year} ${v.make} ${v.model}`,
-            getCustomerName(v),
-            getSaleDate(v),
-            `$${getSaleAmount(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
-        ]);
-
-        autoTable(doc, {
-            head: [['Stock #', 'Vehicle', 'Customer', 'Sale Date', 'Amount']],
-            body: tableData,
-            startY: tableY + 10,
-            theme: 'plain',
-            headStyles: {
-                fillColor: [...lightBgColor],
-                textColor: [...textColor],
-                fontStyle: 'bold',
-                fontSize: 9,
-                cellPadding: 3
-            },
-            bodyStyles: {
-                fontSize: 9,
-                cellPadding: 3,
-                textColor: [...textColor]
-            },
-            alternateRowStyles: {
-                fillColor: [248, 250, 252]
-            },
-            columnStyles: {
-                0: { cellWidth: 22 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 40 },
-                3: { cellWidth: 28 },
-                4: { halign: 'right', fontStyle: 'bold', cellWidth: 30 }
-            },
-            tableLineColor: [226, 232, 240],
-            tableLineWidth: 0.1,
-            didDrawPage: function (data) {
-                // Footer on each page
-                const footerY = pageHeight - 15;
-                doc.setFillColor(...lightBgColor);
-                doc.rect(0, footerY - 5, pageWidth, 20, 'F');
-
-                doc.setFontSize(8);
-                doc.setTextColor(...textColor);
-                doc.text(`Generated on ${new Date().toLocaleString()}`, 14, footerY);
-                doc.text(`Page ${data.pageNumber}`, pageWidth - 14, footerY, { align: 'right' });
-            }
-        });
-
-        // Add total row after table
-        const finalY = doc.lastAutoTable.finalY + 2;
-        doc.setFillColor(...successColor);
-        doc.rect(14, finalY, chartWidth, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TOTAL', pageWidth - 50, finalY + 7);
-        doc.text(`$${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, pageWidth - 14, finalY + 7, { align: 'right' });
-
-        doc.save(`weekly-sales-${new Date().toISOString().split('T')[0]}.pdf`);
+        // Open in new window and print
+        const printWindow = window.open('', '_blank', 'width=850,height=1100');
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
     };
 
     return (
